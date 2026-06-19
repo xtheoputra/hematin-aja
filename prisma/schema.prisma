@@ -1,0 +1,62 @@
+// Hematin Aja — skema database perbandingan harga supermarket.
+// SQLite untuk lokal/dev. Ganti provider ke "postgresql" untuk produksi.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Supermarket {
+  id        String  @id @default(cuid())
+  slug      String  @unique
+  name      String
+  color     String  @default("#10b981") // warna brand untuk UI
+  website   String?
+  prices    Price[]
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  slug     String    @unique
+  name     String
+  icon     String    @default("🛒") // emoji untuk UI
+  products Product[]
+}
+
+model Product {
+  id         String   @id @default(cuid())
+  slug       String   @unique
+  name       String
+  brand      String?
+  unit       String   @default("1 pcs") // contoh: "1 L", "5 kg", "1 renceng"
+  emoji      String   @default("📦")
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  prices     Price[]
+  createdAt  DateTime @default(now())
+
+  @@index([categoryId])
+}
+
+// Setiap baris = satu pengamatan harga (snapshot) sebuah produk di sebuah
+// supermarket pada satu waktu. Banyak baris per (produk, supermarket) = history.
+model Price {
+  id            String      @id @default(cuid())
+  productId     String
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supermarketId String
+  supermarket   Supermarket @relation(fields: [supermarketId], references: [id], onDelete: Cascade)
+  price         Int // harga dalam Rupiah (tanpa desimal)
+  inStock       Boolean     @default(true)
+  url           String? // tautan ke halaman produk di toko (untuk hasil scraping)
+  source        String      @default("seed") // "seed" | "scrape" | "manual"
+  recordedAt    DateTime    @default(now())
+
+  @@index([productId, supermarketId, recordedAt])
+  @@index([recordedAt])
+}

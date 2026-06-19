@@ -1,0 +1,21 @@
+{
+  "name": "Hematin Aja — Banding Harga Supermarket",
+  "short_name": "Hematin Aja",
+  "description": "Bandingkan harga produk dari berbagai supermarket di Indonesia dan temukan tempat belanja termurah.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8fafc",
+  "theme_color": "#059669",
+  "lang": "id",
+  "categories": ["shopping", "finance", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
