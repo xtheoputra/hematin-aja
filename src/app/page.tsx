@@ -4,6 +4,7 @@ import ProductCard from "@/components/ProductCard";
 import SearchControls from "@/components/SearchControls";
 import { Logo } from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
+import RefreshButton from "@/components/RefreshButton";
 
 export const dynamic = "force-dynamic";
 
@@ -32,10 +33,13 @@ export default async function HomePage({
         <div className="pointer-events-none absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-black/5 md:h-64 md:w-64" />
 
         <div className="container-app relative pb-20 pt-7 md:pb-28 md:pt-16 md:text-center">
-          {/* Logo + toggle hanya di mobile (desktop pakai TopNav) */}
+          {/* Logo + aksi hanya di mobile (desktop pakai TopNav) */}
           <div className="flex items-start justify-between md:hidden">
             <Logo light />
-            <ThemeToggle light />
+            <div className="flex items-center gap-2">
+              <RefreshButton light />
+              <ThemeToggle light />
+            </div>
           </div>
 
           <h1 className="mt-6 font-display text-2xl font-extrabold leading-tight tracking-tight md:mt-0 md:text-5xl">

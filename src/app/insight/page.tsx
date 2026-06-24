@@ -23,9 +23,10 @@ export default async function InsightPage() {
         <div className="flex items-start gap-2 rounded-2xl border border-gold-200 bg-gold-50 px-4 py-3 text-xs leading-relaxed text-gold-800 dark:border-gold-500/30 dark:bg-gold-500/10 dark:text-gold-300">
           <span className="shrink-0">⚠️</span>
           <span>
-            Angka harga & "promo" di sini bersifat <b>ilustrasi (simulasi)</b>,
-            bukan harga/diskon <i>live</i> dari toko — jadi jangan dijadikan
-            patokan promo. Selalu cek harga resmi di toko sebelum belanja.
+            Sebagian harga masih <b>ilustrasi (simulasi)</b>. Harga yang sudah
+            terverifikasi ditandai <b>✓ Nyata</b> (sumber Open Prices). Tekan
+            tombol <b>🔄 Refresh harga</b> untuk menarik data nyata terbaru.
+            Tetap cek harga resmi di toko sebelum belanja.
           </span>
         </div>
 

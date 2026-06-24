@@ -4,6 +4,7 @@ import { getSupermarketDetail } from "@/lib/queries";
 import { formatRupiah } from "@/lib/format";
 import StoreAvatar from "@/components/StoreAvatar";
 import ProductThumb from "@/components/ProductThumb";
+import PriceSourceBadge from "@/components/PriceSourceBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -120,9 +121,12 @@ export default async function SupermarketDetailPage({
                   emojiClassName="text-2xl"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-ink-800 dark:text-ink-100">
-                    {p.name}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="truncate text-sm font-semibold text-ink-800 dark:text-ink-100">
+                      {p.name}
+                    </p>
+                    <PriceSourceBadge isReal={p.isReal} className="shrink-0" />
+                  </div>
                   {p.isCheapest ? (
                     <p className="text-[11px] font-semibold text-brand-600">
                       ⭐ Termurah di sini

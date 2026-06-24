@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "./Logo";
 import ThemeToggle from "./ThemeToggle";
+import RefreshButton from "./RefreshButton";
 import { useCart } from "./CartProvider";
 
 const links = [
@@ -50,6 +51,7 @@ export default function TopNav() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
+          <RefreshButton />
           <ThemeToggle />
           <Link
             href="/keranjang"

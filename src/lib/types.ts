@@ -7,6 +7,8 @@ export type StorePrice = {
   inStock: boolean;
   recordedAt: string;
   url?: string | null;
+  source: string; // "seed" | "import-off" (ilustrasi) | "open-prices" (nyata)
+  isReal: boolean; // true bila harga berasal dari sumber nyata
 };
 
 export type ProductListItem = {
@@ -25,6 +27,7 @@ export type ProductListItem = {
   cheapestStoreColor: string;
   storeCount: number; // jumlah toko yang punya harga
   spread: number; // selisih maksimal-minimal (potensi hemat)
+  hasRealPrice: boolean; // true bila ada harga nyata (Open Prices)
 };
 
 export type PricePoint = {
@@ -99,6 +102,7 @@ export type SupermarketProductRow = {
   isCheapest: boolean;
   vsMin: number; // selisih dari harga termurah pasar (0 jika termurah)
   cheapestStore: string;
+  isReal: boolean;
 };
 
 export type SupermarketDetail = SupermarketSummary & {

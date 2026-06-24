@@ -3,6 +3,7 @@ import type { ProductListItem } from "@/lib/types";
 import { formatRupiah } from "@/lib/format";
 import AddToCartButton from "./AddToCartButton";
 import ProductThumb from "./ProductThumb";
+import PriceSourceBadge from "./PriceSourceBadge";
 
 export default function ProductCard({ p }: { p: ProductListItem }) {
   const hasSpread = p.spread > 0;
@@ -30,9 +31,12 @@ export default function ProductCard({ p }: { p: ProductListItem }) {
 
       {/* Info */}
       <div className="min-w-0 flex-1">
-        <h3 className="truncate text-sm font-semibold leading-tight text-ink-800 dark:text-ink-100">
-          {p.name}
-        </h3>
+        <div className="flex items-center gap-1.5">
+          <h3 className="truncate text-sm font-semibold leading-tight text-ink-800 dark:text-ink-100">
+            {p.name}
+          </h3>
+          {p.hasRealPrice && <PriceSourceBadge isReal className="shrink-0" />}
+        </div>
         <p className="mt-0.5 text-[11px] text-ink-400">{p.unit}</p>
 
         <div className="mt-1.5 flex items-baseline gap-1.5">

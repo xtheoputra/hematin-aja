@@ -7,6 +7,7 @@ import AddToCartButton from "@/components/AddToCartButton";
 import StoreAvatar from "@/components/StoreAvatar";
 import ProductThumb from "@/components/ProductThumb";
 import ThemeToggle from "@/components/ThemeToggle";
+import PriceSourceBadge from "@/components/PriceSourceBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -152,9 +153,16 @@ export default async function ProductPage({
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-ink-800 dark:text-ink-100">
-                      {s.supermarketName}
-                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="truncate text-sm font-semibold text-ink-800 dark:text-ink-100">
+                        {s.supermarketName}
+                      </p>
+                      <PriceSourceBadge
+                        isReal={s.isReal}
+                        date={s.recordedAt}
+                        className="shrink-0"
+                      />
+                    </div>
                     {!s.inStock ? (
                       <p className="text-[11px] font-medium text-rose-400">
                         Stok habis

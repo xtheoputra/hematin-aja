@@ -16,27 +16,42 @@ type PriceWithStore = {
   price: number;
   inStock: boolean;
   url: string | null;
+  source: string;
   recordedAt: Date;
   supermarket: { slug: string; name: string; color: string };
 };
 
-// Ambil harga TERBARU per supermarket dari daftar harga (terurut desc lebih dulu).
+// Harga dianggap NYATA bila bukan hasil seed/impor simulasi.
+export const isRealSource = (source: string) =>
+  source !== "seed" && source !== "import-off";
+
+function toStorePrice(p: PriceWithStore): StorePrice {
+  return {
+    supermarketId: p.supermarketId,
+    supermarketSlug: p.supermarket.slug,
+    supermarketName: p.supermarket.name,
+    color: p.supermarket.color,
+    price: p.price,
+    inStock: p.inStock,
+    recordedAt: p.recordedAt.toISOString(),
+    url: p.url,
+    source: p.source,
+    isReal: isRealSource(p.source),
+  };
+}
+
+// Ambil harga TERBARU per supermarket (terurut desc lebih dulu).
+// Bila ada harga NYATA untuk sebuah toko, itu yang dipakai (lebih diutamakan
+// daripada harga ilustrasi), meski tanggalnya lebih lama.
 function latestPerStore(prices: PriceWithStore[]): StorePrice[] {
-  const seen = new Map<string, StorePrice>();
+  const real = new Map<string, StorePrice>();
+  const any = new Map<string, StorePrice>();
   for (const p of prices) {
-    if (seen.has(p.supermarketId)) continue;
-    seen.set(p.supermarketId, {
-      supermarketId: p.supermarketId,
-      supermarketSlug: p.supermarket.slug,
-      supermarketName: p.supermarket.name,
-      color: p.supermarket.color,
-      price: p.price,
-      inStock: p.inStock,
-      recordedAt: p.recordedAt.toISOString(),
-      url: p.url,
-    });
+    const sp = toStorePrice(p);
+    if (!any.has(p.supermarketId)) any.set(p.supermarketId, sp);
+    if (sp.isReal && !real.has(p.supermarketId)) real.set(p.supermarketId, sp);
   }
-  return [...seen.values()];
+  return [...any.keys()].map((id) => real.get(id) ?? any.get(id)!);
 }
 
 const dayKey = (d: Date) => d.toISOString().slice(0, 10);
@@ -128,6 +143,7 @@ export async function getProducts(opts: {
       cheapestStoreColor: sorted[0]?.color ?? "#10b981",
       storeCount: stores.length,
       spread: max - min,
+      hasRealPrice: stores.some((s) => s.isReal),
     };
   });
 }
@@ -372,6 +388,7 @@ export async function getSupermarketDetail(
       isCheapest: here.price === min,
       vsMin: here.price - min,
       cheapestStore: sorted[0].supermarketName,
+      isReal: here.isReal,
     });
   }
 
