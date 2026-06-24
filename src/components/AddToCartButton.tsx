@@ -16,8 +16,8 @@ export default function AddToCartButton({
 
   const base =
     size === "lg"
-      ? "h-12 px-5 text-base rounded-xl w-full"
-      : "h-9 w-9 rounded-lg text-lg";
+      ? "px-5 py-4 text-base rounded-2xl w-full"
+      : "h-9 w-9 rounded-xl text-lg";
 
   return (
     <button
@@ -28,19 +28,19 @@ export default function AddToCartButton({
         add(item);
       }}
       aria-label={added ? "Sudah di keranjang" : "Tambah ke keranjang"}
-      className={`flex items-center justify-center gap-2 font-semibold transition active:scale-95 ${base} ${
+      className={`flex items-center justify-center gap-2 font-semibold transition active:scale-90 ${base} ${
         added
           ? "bg-brand-100 text-brand-700"
-          : "bg-brand-600 text-white hover:bg-brand-700"
+          : "bg-brand-600 text-white shadow-glow hover:bg-brand-700"
       } ${className}`}
     >
       {size === "lg" ? (
         <>
-          <span>{added ? "✓" : "＋"}</span>
-          {added ? "Ditambahkan ke keranjang" : "Tambah ke keranjang"}
+          <span className="text-lg">{added ? "✓" : "🧺"}</span>
+          {added ? "Sudah di keranjang" : "Tambah ke keranjang"}
         </>
       ) : (
-        <span>{added ? "✓" : "＋"}</span>
+        <span className={added ? "animate-pop-in" : ""}>{added ? "✓" : "＋"}</span>
       )}
     </button>
   );

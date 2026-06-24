@@ -2,28 +2,88 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+@layer base {
+  :root {
+    --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system,
+      "Segoe UI", Roboto, sans-serif;
+    --font-display: var(--font-jakarta), var(--font-sans);
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Hormati preferensi pengguna yang ingin mengurangi animasi */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    @apply bg-ink-100 text-ink-800 antialiased transition-colors duration-300 dark:bg-ink-950 dark:text-ink-200;
+  }
+
+  /* Tipografi angka rupiah lebih rapi & sejajar */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
-html {
-  -webkit-tap-highlight-color: transparent;
+@layer components {
+  /* Kartu standar */
+  .card {
+    @apply rounded-3xl border border-ink-200/70 bg-white shadow-card dark:border-ink-800 dark:bg-ink-900;
+  }
+
+  /* Teks gradien brand */
+  .text-gradient {
+    @apply bg-gradient-to-r from-brand-700 to-brand-500 bg-clip-text text-transparent;
+  }
+
+  /* Tombol pill */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-600 font-semibold text-white shadow-glow transition active:scale-[0.97] hover:bg-brand-700;
+  }
+
+  /* Skeleton shimmer */
+  .skeleton {
+    @apply relative overflow-hidden rounded-2xl bg-ink-200/60 dark:bg-ink-800;
+  }
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-0 -translate-x-full;
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.6),
+      transparent
+    );
+    animation: shimmer 1.4s infinite;
+  }
 }
 
-body {
-  @apply bg-slate-50 text-slate-800 antialiased;
-}
+@layer utilities {
+  /* Sembunyikan scrollbar pada baris chip kategori */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 
-/* Sembunyikan scrollbar pada baris chip kategori */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
+  /* Kontainer konten website (terpusat, lebar terbatas) */
+  .container-app {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
 
-/* aman dari notch + ruang untuk bottom nav */
-.app-shell {
-  padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  /* Ruang bawah agar konten tidak tertutup bottom-nav (hanya di mobile) */
+  .pb-nav {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
 }

@@ -16,6 +16,9 @@ model Supermarket {
   name      String
   color     String  @default("#10b981") // warna brand untuk UI
   website   String?
+  type      String  @default("Supermarket") // Minimarket | Supermarket | Hypermarket
+  tagline   String? // deskripsi singkat untuk profil toko
+  outlets   Int? // perkiraan jumlah gerai di Indonesia
   prices    Price[]
   createdAt DateTime @default(now())
 }
@@ -35,6 +38,8 @@ model Product {
   brand      String?
   unit       String   @default("1 pcs") // contoh: "1 L", "5 kg", "1 renceng"
   emoji      String   @default("📦")
+  image      String? // URL gambar produk (mis. dari Open Food Facts); fallback ke emoji
+  barcode    String? @unique // EAN/UPC; dipakai untuk dedup saat impor data riil
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
   prices     Price[]

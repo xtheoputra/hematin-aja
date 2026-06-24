@@ -1,7 +1,9 @@
 import { Suspense } from "react";
-import { getCategories, getProducts } from "@/lib/queries";
+import { getCategories, getProducts, getHomeStats } from "@/lib/queries";
 import ProductCard from "@/components/ProductCard";
 import SearchControls from "@/components/SearchControls";
+import { Logo } from "@/components/Logo";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export const dynamic = "force-dynamic";
 
@@ -13,53 +15,127 @@ export default async function HomePage({
   const search = searchParams.q?.trim() || undefined;
   const category = searchParams.kategori || undefined;
 
-  const [categories, products] = await Promise.all([
+  const [categories, products, stats] = await Promise.all([
     getCategories(),
     getProducts({ search, category }),
+    getHomeStats(),
   ]);
+
+  const isFiltering = Boolean(search || category);
+  const activeCategory = categories.find((c) => c.slug === category);
 
   return (
     <main>
-      <header className="sticky top-0 z-30 bg-gradient-to-b from-brand-600 to-brand-500 px-4 pb-4 pt-6 text-white shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-extrabold tracking-tight">
-              Hematin Aja 🛒
-            </h1>
-            <p className="text-xs text-brand-100">
-              Banding harga {categories.length} kategori dari banyak supermarket
-            </p>
+      {/* ===== Hero ===== */}
+      <header className="relative overflow-hidden bg-brand-gradient text-white">
+        <div className="pointer-events-none absolute -right-12 -top-14 h-44 w-44 rounded-full bg-white/10 md:h-72 md:w-72" />
+        <div className="pointer-events-none absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-black/5 md:h-64 md:w-64" />
+
+        <div className="container-app relative pb-20 pt-7 md:pb-28 md:pt-16 md:text-center">
+          {/* Logo + toggle hanya di mobile (desktop pakai TopNav) */}
+          <div className="flex items-start justify-between md:hidden">
+            <Logo light />
+            <ThemeToggle light />
+          </div>
+
+          <h1 className="mt-6 font-display text-2xl font-extrabold leading-tight tracking-tight md:mt-0 md:text-5xl">
+            Belanja pintar, harga selalu termurah.
+          </h1>
+          <p className="mt-2 max-w-[18rem] text-sm text-brand-50/90 md:mx-auto md:mt-4 md:max-w-xl md:text-base">
+            Bandingkan harga produk konsumsi dari {stats.storeCount} supermarket
+            di Indonesia dalam sekali lihat.
+          </p>
+
+          {/* Stat strip */}
+          <div className="mt-5 grid grid-cols-3 gap-2.5 md:mx-auto md:mt-8 md:max-w-2xl md:gap-4">
+            <HeroStat value={`${stats.storeCount}`} label="Supermarket" />
+            <HeroStat value={`${stats.productCount}`} label="Produk" />
+            <HeroStat
+              value={`±${Math.round(stats.totalSaving / 1000)}rb`}
+              label="Potensi hemat"
+              accent
+            />
           </div>
         </div>
       </header>
 
-      <div className="space-y-4 px-4 pt-4">
-        <Suspense fallback={<div className="h-24" />}>
+      {/* ===== Pencarian (mengambang di atas hero) ===== */}
+      <div className="container-app relative z-20 -mt-10 md:-mt-12 md:max-w-3xl">
+        <Suspense fallback={<div className="h-12 rounded-2xl bg-white shadow-card" />}>
           <SearchControls categories={categories} />
         </Suspense>
+      </div>
 
+      {/* ===== Hasil ===== */}
+      <div className="container-app space-y-4 pt-6 md:pt-8">
         <div className="flex items-center justify-between">
-          <p className="text-xs text-slate-400">
-            {products.length} produk ditemukan
+          <h2 className="font-display text-base font-bold text-ink-800 dark:text-ink-100 md:text-xl">
+            {isFiltering
+              ? activeCategory
+                ? activeCategory.name
+                : "Hasil pencarian"
+              : "Produk populer"}
+          </h2>
+          <p className="text-xs font-medium text-ink-400 md:text-sm">
+            {products.length} produk
           </p>
         </div>
 
         {products.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white py-12 text-center">
-            <p className="text-4xl">🔍</p>
-            <p className="mt-2 text-sm text-slate-500">
-              Produk tidak ditemukan.
+          <div className="card flex flex-col items-center px-6 py-14 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-ink-100 text-3xl dark:bg-ink-800">
+              🔍
+            </div>
+            <p className="mt-4 text-sm font-semibold text-ink-700 dark:text-ink-200">
+              Produk tidak ditemukan
             </p>
-            <p className="text-xs text-slate-400">Coba kata kunci lain.</p>
+            <p className="mt-1 text-xs text-ink-400">
+              Coba kata kunci lain atau pilih kategori berbeda.
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3">
-            {products.map((p) => (
-              <ProductCard key={p.id} p={p} />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {products.map((p, i) => (
+              <div
+                key={p.id}
+                className="animate-fade-up"
+                style={{ animationDelay: `${Math.min(i, 8) * 35}ms` }}
+              >
+                <ProductCard p={p} />
+              </div>
             ))}
           </div>
         )}
       </div>
     </main>
+  );
+}
+
+function HeroStat({
+  value,
+  label,
+  accent,
+}: {
+  value: string;
+  label: string;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-2xl px-3 py-2.5 backdrop-blur md:py-4 ${
+        accent ? "bg-gold-400/95 text-ink-900" : "bg-white/15 text-white"
+      }`}
+    >
+      <p className="font-display text-lg font-extrabold leading-none tabular-nums md:text-3xl">
+        {value}
+      </p>
+      <p
+        className={`mt-1 text-[10px] font-medium md:mt-1.5 md:text-xs ${
+          accent ? "text-ink-800/80" : "text-brand-50/80"
+        }`}
+      >
+        {label}
+      </p>
+    </div>
   );
 }

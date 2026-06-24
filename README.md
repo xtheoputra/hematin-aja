@@ -30,6 +30,18 @@ lengkap dengan **insight** & rekomendasi hemat.
 
 ## 🚀 Menjalankan (lokal)
 
+### Cara cepat (Windows) — sekali klik
+
+Klik dua kali salah satu file ini di folder proyek:
+
+- **`start.bat`** → mode pengembangan (otomatis `npm install` + `npm run setup` bila perlu, lalu buka `http://localhost:3000`).
+- **`start-prod.bat`** → mode produksi (build teroptimasi lalu jalankan).
+- **`start.ps1`** → versi PowerShell dari `start.bat`.
+
+Skrip akan memasang dependensi & menyiapkan database secara otomatis bila belum ada, lalu membuka browser.
+
+### Cara manual
+
 ```bash
 npm install          # pasang dependency
 npm run setup        # buat tabel DB + isi data contoh (db push + seed)
@@ -42,6 +54,7 @@ Skrip lain:
 npm run db:seed      # isi ulang data contoh
 npm run db:reset     # reset DB + seed ulang
 npm run db:studio    # buka Prisma Studio (lihat/ubah data)
+npm run import:off    # impor produk Indonesia ASLI dari Open Food Facts (mis. `npm run import:off -- 40`)
 npm run scrape       # jalankan scraper aktif (lihat di bawah)
 npm run build        # build produksi
 ```

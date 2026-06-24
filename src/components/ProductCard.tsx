@@ -2,51 +2,72 @@ import Link from "next/link";
 import type { ProductListItem } from "@/lib/types";
 import { formatRupiah } from "@/lib/format";
 import AddToCartButton from "./AddToCartButton";
+import ProductThumb from "./ProductThumb";
 
 export default function ProductCard({ p }: { p: ProductListItem }) {
+  const hasSpread = p.spread > 0;
+
   return (
     <Link
       href={`/produk/${p.slug}`}
-      className="flex gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm transition active:scale-[0.99]"
+      className="group flex gap-3.5 rounded-3xl border border-ink-200/70 bg-white p-3 shadow-card transition active:scale-[0.99] hover:border-brand-200 hover:shadow-card-hover dark:border-ink-800 dark:bg-ink-900 dark:hover:border-brand-700"
     >
-      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-3xl">
-        {p.emoji}
+      {/* Thumbnail */}
+      <div className="relative shrink-0">
+        <ProductThumb
+          image={p.image}
+          emoji={p.emoji}
+          alt={p.name}
+          className="h-[4.5rem] w-[4.5rem] rounded-2xl"
+          emojiClassName="text-3xl"
+        />
+        {hasSpread && (
+          <span className="absolute -right-1.5 -top-1.5 rounded-full bg-gold-400 px-1.5 py-0.5 text-[9px] font-bold text-ink-900 shadow-sm">
+            HEMAT
+          </span>
+        )}
       </div>
 
+      {/* Info */}
       <div className="min-w-0 flex-1">
-        <h3 className="truncate text-sm font-semibold leading-tight text-slate-800">
+        <h3 className="truncate text-sm font-semibold leading-tight text-ink-800 dark:text-ink-100">
           {p.name}
         </h3>
-        <p className="text-xs text-slate-400">{p.unit}</p>
+        <p className="mt-0.5 text-[11px] text-ink-400">{p.unit}</p>
 
-        <div className="mt-1 flex items-baseline gap-1.5">
-          <span className="text-base font-bold text-brand-700">
+        <div className="mt-1.5 flex items-baseline gap-1.5">
+          <span className="font-display text-lg font-extrabold leading-none tabular-nums text-ink-900 dark:text-white">
             {formatRupiah(p.minPrice)}
           </span>
-          {p.spread > 0 && (
-            <span className="text-[11px] text-slate-400 line-through">
+          {hasSpread && (
+            <span className="text-[11px] text-ink-400 line-through tabular-nums">
               {formatRupiah(p.maxPrice)}
             </span>
           )}
         </div>
 
-        <div className="mt-1 flex items-center gap-1.5">
+        <div className="mt-1.5 flex items-center gap-1.5">
           <span
-            className="inline-block h-2 w-2 rounded-full"
+            className="inline-block h-2 w-2 shrink-0 rounded-full ring-2 ring-white"
             style={{ backgroundColor: p.cheapestStoreColor }}
           />
-          <span className="truncate text-[11px] text-slate-500">
-            Termurah di <b className="text-slate-700">{p.cheapestStore}</b>
-            {p.storeCount > 1 && ` · ${p.storeCount} toko`}
+          <span className="truncate text-[11px] text-ink-500 dark:text-ink-400">
+            Termurah di <b className="font-semibold text-ink-700 dark:text-ink-200">{p.cheapestStore}</b>
+            {p.storeCount > 1 && (
+              <span className="text-ink-400"> · {p.storeCount} toko</span>
+            )}
           </span>
         </div>
       </div>
 
+      {/* Aksi */}
       <div className="flex flex-col items-end justify-between">
-        {p.spread > 0 && (
-          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-600">
-            hemat {formatRupiah(p.spread)}
+        {hasSpread ? (
+          <span className="rounded-full bg-gold-50 px-2 py-0.5 text-[10px] font-bold text-gold-700">
+            −{formatRupiah(p.spread)}
           </span>
+        ) : (
+          <span className="text-ink-300 transition group-hover:text-brand-500">→</span>
         )}
         <AddToCartButton
           item={{

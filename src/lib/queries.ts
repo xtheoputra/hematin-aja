@@ -6,6 +6,9 @@ import type {
   PricePoint,
   CartCompareStore,
   Insights,
+  SupermarketSummary,
+  SupermarketDetail,
+  SupermarketProductRow,
 } from "@/lib/types";
 
 type PriceWithStore = {
@@ -40,6 +43,37 @@ const dayKey = (d: Date) => d.toISOString().slice(0, 10);
 
 export async function getCategories() {
   return prisma.category.findMany({ orderBy: { name: "asc" } });
+}
+
+// Statistik ringkas untuk hero beranda (jumlah toko, produk, total potensi hemat).
+export async function getHomeStats(): Promise<{
+  storeCount: number;
+  productCount: number;
+  totalSaving: number;
+}> {
+  const [storeCount, products] = await Promise.all([
+    prisma.supermarket.count(),
+    prisma.product.findMany({
+      include: {
+        prices: {
+          orderBy: { recordedAt: "desc" },
+          include: { supermarket: true },
+        },
+      },
+    }),
+  ]);
+
+  let totalSaving = 0;
+  for (const p of products) {
+    const inStock = latestPerStore(p.prices as PriceWithStore[]).filter(
+      (s) => s.inStock
+    );
+    if (inStock.length < 2) continue;
+    const prices = inStock.map((s) => s.price);
+    totalSaving += Math.max(...prices) - Math.min(...prices);
+  }
+
+  return { storeCount, productCount: products.length, totalSaving };
 }
 
 export async function getProducts(opts: {
@@ -85,6 +119,7 @@ export async function getProducts(opts: {
       brand: p.brand,
       unit: p.unit,
       emoji: p.emoji,
+      image: p.image,
       categorySlug: p.category.slug,
       categoryName: p.category.name,
       minPrice: min,
@@ -153,6 +188,7 @@ export async function getProductDetail(
     brand: p.brand,
     unit: p.unit,
     emoji: p.emoji,
+    image: p.image,
     categorySlug: p.category.slug,
     categoryName: p.category.name,
     stores,
@@ -234,6 +270,117 @@ export async function compareCart(
   return result.sort(
     (a, b) => b.availableCount - a.availableCount || a.total - b.total
   );
+}
+
+// Ringkasan semua supermarket + statistik posisi harga.
+export async function getSupermarkets(): Promise<SupermarketSummary[]> {
+  const [supermarkets, products] = await Promise.all([
+    prisma.supermarket.findMany({ orderBy: { name: "asc" } }),
+    prisma.product.findMany({
+      include: {
+        prices: {
+          orderBy: { recordedAt: "desc" },
+          include: { supermarket: true },
+        },
+      },
+    }),
+  ]);
+
+  type Acc = { stocked: number; wins: number; ratioSum: number; ratioN: number };
+  const acc = new Map<string, Acc>();
+  const get = (id: string) =>
+    acc.get(id) ?? { stocked: 0, wins: 0, ratioSum: 0, ratioN: 0 };
+
+  for (const p of products) {
+    const stores = latestPerStore(p.prices as PriceWithStore[]).filter(
+      (s) => s.inStock
+    );
+    if (stores.length === 0) continue;
+    const min = Math.min(...stores.map((s) => s.price));
+    const cheapest = [...stores].sort((a, b) => a.price - b.price)[0];
+
+    for (const s of stores) {
+      const a = get(s.supermarketId);
+      a.stocked += 1;
+      if (min > 0) {
+        a.ratioSum += s.price / min;
+        a.ratioN += 1;
+      }
+      acc.set(s.supermarketId, a);
+    }
+    const w = get(cheapest.supermarketId);
+    w.wins += 1;
+    acc.set(cheapest.supermarketId, w);
+  }
+
+  return supermarkets
+    .map((sm) => {
+      const a = get(sm.id);
+      return {
+        slug: sm.slug,
+        name: sm.name,
+        color: sm.color,
+        type: sm.type,
+        tagline: sm.tagline,
+        outlets: sm.outlets,
+        website: sm.website,
+        productCount: a.stocked,
+        wins: a.wins,
+        winRate: a.stocked > 0 ? (a.wins / a.stocked) * 100 : 0,
+        priceIndex: a.ratioN > 0 ? Math.round((a.ratioSum / a.ratioN) * 100) : 100,
+      };
+    })
+    .sort((a, b) => a.priceIndex - b.priceIndex); // termurah dulu
+}
+
+// Profil satu supermarket + daftar produk yang dijualnya.
+export async function getSupermarketDetail(
+  slug: string
+): Promise<SupermarketDetail | null> {
+  const summaries = await getSupermarkets();
+  const summary = summaries.find((s) => s.slug === slug);
+  if (!summary) return null;
+
+  const products = await prisma.product.findMany({
+    include: {
+      category: true,
+      prices: {
+        orderBy: { recordedAt: "desc" },
+        include: { supermarket: true },
+      },
+    },
+  });
+
+  const rows: SupermarketProductRow[] = [];
+  for (const p of products) {
+    const stores = latestPerStore(p.prices as PriceWithStore[]).filter(
+      (s) => s.inStock
+    );
+    if (stores.length === 0) continue;
+    const here = stores.find((s) => s.supermarketSlug === slug);
+    if (!here) continue; // toko ini tidak menjual produk tsb
+    const sorted = [...stores].sort((a, b) => a.price - b.price);
+    const min = sorted[0].price;
+    rows.push({
+      slug: p.slug,
+      name: p.name,
+      emoji: p.emoji,
+      image: p.image,
+      unit: p.unit,
+      categoryName: p.category.name,
+      price: here.price,
+      isCheapest: here.price === min,
+      vsMin: here.price - min,
+      cheapestStore: sorted[0].supermarketName,
+    });
+  }
+
+  // Urutkan: yang termurah (juara) dulu, lalu selisih terkecil.
+  rows.sort(
+    (a, b) => Number(b.isCheapest) - Number(a.isCheapest) || a.vsMin - b.vsMin
+  );
+
+  return { ...summary, products: rows };
 }
 
 export async function getInsights(): Promise<Insights> {

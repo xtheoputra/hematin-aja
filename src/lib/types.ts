@@ -16,6 +16,7 @@ export type ProductListItem = {
   brand: string | null;
   unit: string;
   emoji: string;
+  image: string | null;
   categorySlug: string;
   categoryName: string;
   minPrice: number;
@@ -38,6 +39,7 @@ export type ProductDetail = {
   brand: string | null;
   unit: string;
   emoji: string;
+  image: string | null;
   categorySlug: string;
   categoryName: string;
   stores: StorePrice[]; // harga terbaru per toko, terurut termurah dulu
@@ -70,6 +72,37 @@ export type CartCompareStore = {
   availableCount: number;
   missingCount: number;
   lines: CartCompareLine[];
+};
+
+export type SupermarketSummary = {
+  slug: string;
+  name: string;
+  color: string;
+  type: string;
+  tagline: string | null;
+  outlets: number | null;
+  website: string | null;
+  productCount: number; // jumlah produk yang tersedia (in stock)
+  wins: number; // jumlah produk di mana toko ini termurah
+  winRate: number; // % produk yang termurah di toko ini
+  priceIndex: number; // 100 = rata-rata pasar; <100 lebih murah, >100 lebih mahal
+};
+
+export type SupermarketProductRow = {
+  slug: string;
+  name: string;
+  emoji: string;
+  image: string | null;
+  unit: string;
+  categoryName: string;
+  price: number;
+  isCheapest: boolean;
+  vsMin: number; // selisih dari harga termurah pasar (0 jika termurah)
+  cheapestStore: string;
+};
+
+export type SupermarketDetail = SupermarketSummary & {
+  products: SupermarketProductRow[];
 };
 
 export type Insights = {
