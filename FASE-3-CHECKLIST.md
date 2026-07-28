@@ -372,7 +372,14 @@ ada yang memverifikasi bahwa fotonya struk sungguhan.
 
 ---
 
+## 🔜 Berikutnya
+
+[`FASE-4-CHECKLIST.md`](FASE-4-CHECKLIST.md) — mesin rekomendasi. Riwayat
+transaksi dari OCR adalah bahan bakar untuk insight pengeluaran di sana.
+
+---
+
 *Prasyarat: [`FASE-1`](FASE-1-CHECKLIST.md) · [`FASE-1.5`](FASE-1.5-CHECKLIST.md) ·
-Terkait: [`FASE-2`](FASE-2-CHECKLIST.md) ·
+Terkait: [`FASE-2`](FASE-2-CHECKLIST.md) · [`FASE-4`](FASE-4-CHECKLIST.md) ·
 Arah besar: [`PETA-JALAN.md`](PETA-JALAN.md) ·
 Riwayat: [`CATATAN-SESI.md`](CATATAN-SESI.md)*

@@ -21,6 +21,9 @@ lengkap dengan **insight** & rekomendasi hemat.
 - **[`FASE-3-CHECKLIST.md`](FASE-3-CHECKLIST.md)** — pipeline OCR struk. Tidak
   bergantung pada Fase 2, dan bisa dinaikkan lebih awal karena struk adalah
   sumber harga nyata terkuat untuk toko fisik.
+- **[`FASE-4-CHECKLIST.md`](FASE-4-CHECKLIST.md)** — mesin rekomendasi. **Baca
+  §0 dulu**: ada keputusan posisi produk (cross-sell vs hemat) yang harus
+  diambil sebelum apa pun dikerjakan.
 - **[`PETA-JALAN.md`](PETA-JALAN.md)** — arah jangka panjang: visi, arsitektur
   target, desain data, prompt AI, dan tahapan pengerjaan.
 - **[`CATATAN-SESI.md`](CATATAN-SESI.md)** — riwayat pengerjaan per sesi &
