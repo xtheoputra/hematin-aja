@@ -5,6 +5,58 @@ tanpa membaca ulang seluruh kode.
 
 ---
 
+## 🌅 BESOK MULAI DARI SINI
+
+**Kondisi tinggal:** tree **bersih**, sinkron dengan `origin/main` di `89e38ea`.
+`npx tsc --noEmit` nol error, `npm run build` hijau, aplikasi sudah terbukti
+jalan (3 halaman `200`, log bersih).
+
+### Langkah pertama: **form admin input harga manual**
+
+Ini jalur **tercepat** menambah harga nyata, dan tidak bergantung pada apa pun
+yang belum terbukti (scraper masih tanda tanya).
+
+Kondisi yang memaksa: dari 16.390 baris harga hanya **10** yang nyata — dan
+sesi kemarin membuktikan yang 10 itu pun **berumur 2–8 bulan**. Selama ini
+belum ada satu pun cara memasukkan harga nyata lewat aplikasi.
+
+Rinciannya sudah tertulis di
+[`FASE-1-CHECKLIST.md` §5](FASE-1-CHECKLIST.md). Ringkasnya:
+
+- [ ] Halaman `/admin` **berpelindung sandi** (jangan biarkan terbuka)
+- [ ] `POST /api/admin/prices` — tambah harga manual, `source = "manual"`
+- [ ] Form: produk × toko × harga × tanggal
+- [ ] Validasi: harga > 0, produk & toko wajib ada
+- [ ] Tabel produk yang belum punya harga nyata → daftar kerja yang kelihatan
+- [ ] Tambahkan `"manual"` ke `sourceKindOf()` di `src/lib/source.ts` sebagai
+      **`real`** — kalau lupa, harga yang Anda ketik sendiri akan tampil sebagai
+      *"Perkiraan"*
+
+Setelah form jadi: isi harga nyata untuk kategori fokus (mie instan), lalu
+lihat mode **Hanya Nyata** akhirnya berisi sesuatu.
+
+### ✅ Keputusan yang SUDAH diambil — jangan dibahas ulang
+
+| Keputusan | Isinya |
+| --- | --- |
+| **Cakupan** | Tetap penuh (18 toko × 100 produk). Kejujurannya lewat **label**, bukan mengecilkan katalog |
+| **Tumpukan** | Tetap Next.js + Prisma. FastAPI/Flutter/Elasticsearch/MongoDB/Redis **ditolak** untuk sekarang |
+| **Urutan AI** | Embedding & LLM = fase **paling akhir**, bergerbang bukti kegagalan nyata |
+| **OCR** | Tidak menunggu embedding — boleh dinaikkan lebih awal |
+| **Rekomendasi** | Konflik cross-sell vs hemat di `FASE-4` §0 **masih menunggu keputusan Anda** |
+
+### ⛔ Jangan dikerjakan dulu
+
+- **Optimasi `priceInclude`** — terukur 0,23–0,53 detik, belum terasa
+- **Lindungi `/api/refresh` & `/api/scrape`** — wajib beres **sebelum deploy**,
+  bukan sekarang (masih localhost)
+- **Normalisasi nama & tabel alias** — pencarian lebih baik atas harga basi
+  tetap harga basi. Kerjakan **setelah** ada data nyata
+- **Menulis dokumen rencana baru** — sudah ada 7 dokumen (1.900+ baris) untuk
+  4.500 baris kode. Rasionya sudah terlalu berat ke rencana
+
+---
+
 ## Sesi 4 — 28 Juli 2026 · "Kejujuran Data"
 
 **Status akhir:** build produksi **hijau**, `npx tsc --noEmit` **nol error**,
