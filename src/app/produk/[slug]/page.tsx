@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProductDetail } from "@/lib/queries";
+import { getDisplayMode, isRealOnly } from "@/lib/mode";
 import { formatRupiah, formatPercent } from "@/lib/format";
 import PriceChart from "@/components/PriceChart";
 import AddToCartButton from "@/components/AddToCartButton";
@@ -18,16 +19,21 @@ export default async function ProductPage({
 }: {
   params: { slug: string };
 }) {
-  const p = await getProductDetail(params.slug);
+  const mode = getDisplayMode();
+  const p = await getProductDetail(params.slug, isRealOnly(mode));
   if (!p) notFound();
 
-  const series = p.stores.map((s) => ({
-    slug: s.supermarketSlug,
-    name: s.supermarketName,
-    color: s.color,
-  }));
-  const change = p.stats.changePct;
-  const spread = p.stats.max - p.stats.min;
+  const inStockCells = p.stores.filter((c) => c.available && c.inStock);
+  const medalById = new Map<string, string>();
+  inStockCells.slice(0, 3).forEach((c, i) => medalById.set(c.supermarketId, RANK_BADGE[i]));
+  const bestId = inStockCells[0]?.supermarketId;
+
+  const series = p.stores
+    .filter((c) => c.available)
+    .map((c) => ({ slug: c.slug, name: c.name, color: c.color }));
+
+  const change = p.stats?.changePct ?? null;
+  const spread = p.stats ? p.stats.max - p.stats.min : 0;
 
   return (
     <main>
@@ -67,40 +73,57 @@ export default async function ProductPage({
               {p.name}
             </h1>
             {p.brand && (
-              <p className="mt-0.5 text-xs font-medium text-ink-500 dark:text-ink-400">{p.brand}</p>
+              <p className="mt-0.5 text-xs font-medium text-ink-500 dark:text-ink-400">
+                {p.brand}
+              </p>
             )}
             <p className="text-xs text-ink-400">{p.unit}</p>
+            <p className="mt-1 text-[11px] text-ink-400">
+              {p.availableCount} dari {p.stores.length} toko punya harga
+              {p.realCount > 0 && (
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                  {" "}
+                  · {p.realCount} nyata
+                </span>
+              )}
+            </p>
           </div>
         </section>
 
         {/* Highlight harga termurah */}
-        <section className="card overflow-hidden">
-          <div className="bg-brand-gradient px-4 py-4 text-white">
-            <p className="text-xs font-medium text-brand-50/90">
-              Harga termurah saat ini
-            </p>
-            <div className="mt-1 flex items-end justify-between">
-              <p className="font-display text-3xl font-extrabold tabular-nums">
-                {formatRupiah(p.stats.min)}
+        {p.stats ? (
+          <section className="card overflow-hidden">
+            <div className="bg-brand-gradient px-4 py-4 text-white">
+              <p className="text-xs font-medium text-brand-50/90">
+                Harga termurah saat ini
               </p>
-              <p className="text-right text-xs text-brand-50/90">
-                di{" "}
-                <b className="font-semibold text-white">
-                  {p.stats.cheapestStore}
-                </b>
-              </p>
+              <div className="mt-1 flex items-end justify-between">
+                <p className="font-display text-3xl font-extrabold tabular-nums">
+                  {formatRupiah(p.stats.min)}
+                </p>
+                <p className="text-right text-xs text-brand-50/90">
+                  di <b className="font-semibold text-white">{p.stats.cheapestStore}</b>
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="grid grid-cols-3 divide-x divide-ink-200/60 dark:divide-ink-800">
-            <MiniStat label="Rata-rata" value={formatRupiah(p.stats.avg)} />
-            <MiniStat label="Termahal" value={formatRupiah(p.stats.max)} />
-            <MiniStat
-              label="Selisih"
-              value={formatRupiah(spread)}
-              highlight
-            />
-          </div>
-        </section>
+            <div className="grid grid-cols-3 divide-x divide-ink-200/60 dark:divide-ink-800">
+              <MiniStat label="Rata-rata" value={formatRupiah(p.stats.avg)} />
+              <MiniStat label="Termahal" value={formatRupiah(p.stats.max)} />
+              <MiniStat label="Selisih" value={formatRupiah(spread)} highlight />
+            </div>
+          </section>
+        ) : (
+          <section className="card flex flex-col items-center px-6 py-10 text-center">
+            <PriceSourceBadge source={null} />
+            <p className="mt-3 text-sm font-semibold text-ink-700 dark:text-ink-200">
+              Belum ada harga nyata untuk produk ini
+            </p>
+            <p className="mt-1 text-xs text-ink-400">
+              Pilih mode <b>Semua</b> untuk melihat estimasi, atau tekan{" "}
+              <b>Refresh</b> untuk menarik data nyata terbaru.
+            </p>
+          </section>
+        )}
 
         {change !== null && (
           <div
@@ -119,80 +142,98 @@ export default async function ProductPage({
         )}
 
         <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
-        {/* Grafik tren */}
-        <section className="card p-4">
-          <h2 className="mb-3 font-display text-sm font-bold text-ink-800 dark:text-ink-100">
-            📈 Tren Harga
-          </h2>
-          <PriceChart history={p.history} series={series} />
-        </section>
+          {/* Grafik tren */}
+          <section className="card p-4">
+            <h2 className="mb-3 font-display text-sm font-bold text-ink-800 dark:text-ink-100">
+              📈 Tren Harga
+            </h2>
+            <PriceChart history={p.history} series={series} />
+          </section>
 
-        {/* Daftar harga per toko */}
-        <section className="card p-4">
-          <h2 className="mb-3 font-display text-sm font-bold text-ink-800 dark:text-ink-100">
-            Harga per Supermarket
-          </h2>
-          <ul className="space-y-2">
-            {p.stores.map((s, idx) => {
-              const isBest = idx === 0 && s.inStock;
-              return (
-                <li
-                  key={s.supermarketId}
-                  className={`flex items-center gap-3 rounded-2xl border p-3 transition ${
-                    isBest
-                      ? "border-brand-300 bg-brand-50 dark:border-brand-700 dark:bg-brand-900/20"
-                      : "border-ink-200/60 bg-white dark:border-ink-800 dark:bg-ink-900"
-                  }`}
-                >
-                  <div className="relative">
-                    <StoreAvatar name={s.supermarketName} color={s.color} size="md" />
-                    {s.inStock && idx < 3 && (
-                      <span className="absolute -bottom-1.5 -right-1.5 text-sm">
-                        {RANK_BADGE[idx]}
-                      </span>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <p className="truncate text-sm font-semibold text-ink-800 dark:text-ink-100">
-                        {s.supermarketName}
-                      </p>
-                      <PriceSourceBadge
-                        isReal={s.isReal}
-                        date={s.recordedAt}
-                        className="shrink-0"
-                      />
-                    </div>
-                    {!s.inStock ? (
-                      <p className="text-[11px] font-medium text-rose-400">
-                        Stok habis
-                      </p>
-                    ) : isBest ? (
-                      <p className="text-[11px] font-semibold text-brand-600">
-                        ⭐ Pilihan termurah
-                      </p>
-                    ) : (
-                      <p className="text-[11px] text-ink-400">
-                        +{formatRupiah(s.price - p.stats.min)} dari termurah
-                      </p>
-                    )}
-                  </div>
-                  <span
-                    className={`font-display text-base font-extrabold tabular-nums ${
-                      s.inStock
-                        ? isBest
-                          ? "text-brand-700 dark:text-brand-400"
-                          : "text-ink-800 dark:text-ink-200"
-                        : "text-ink-300 line-through dark:text-ink-600"
+          {/* Daftar harga per toko (SEMUA supermarket) */}
+          <section className="card p-4">
+            <h2 className="mb-3 flex items-center justify-between font-display text-sm font-bold text-ink-800 dark:text-ink-100">
+              Harga per Supermarket
+              <span className="text-[11px] font-medium text-ink-400">
+                {p.stores.length} toko
+              </span>
+            </h2>
+            <ul className="space-y-2">
+              {p.stores.map((s) => {
+                const isBest = s.supermarketId === bestId;
+                const medal = medalById.get(s.supermarketId);
+                return (
+                  <li
+                    key={s.supermarketId}
+                    className={`flex items-center gap-3 rounded-2xl border p-3 transition ${
+                      isBest
+                        ? "border-brand-300 bg-brand-50 dark:border-brand-700 dark:bg-brand-900/20"
+                        : s.available
+                        ? "border-ink-200/60 bg-white dark:border-ink-800 dark:bg-ink-900"
+                        : "border-dashed border-ink-200/70 bg-ink-50/50 dark:border-ink-800 dark:bg-ink-900/40"
                     }`}
                   >
-                    {formatRupiah(s.price)}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
+                    <div className="relative">
+                      <StoreAvatar
+                        name={s.name}
+                        color={s.available ? s.color : "#94a3b8"}
+                        size="md"
+                      />
+                      {medal && (
+                        <span className="absolute -bottom-1.5 -right-1.5 text-sm">
+                          {medal}
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <p
+                          className={`truncate text-sm font-semibold ${
+                            s.available
+                              ? "text-ink-800 dark:text-ink-100"
+                              : "text-ink-400"
+                          }`}
+                        >
+                          {s.name}
+                        </p>
+                        <PriceSourceBadge
+                          source={s.source}
+                          date={s.recordedAt}
+                          className="shrink-0"
+                        />
+                      </div>
+                      {!s.available ? (
+                        <p className="text-[11px] text-ink-400">Belum ada data harga</p>
+                      ) : !s.inStock ? (
+                        <p className="text-[11px] font-medium text-rose-400">Stok habis</p>
+                      ) : isBest ? (
+                        <p className="text-[11px] font-semibold text-brand-600">
+                          ⭐ Pilihan termurah
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-ink-400">
+                          +{formatRupiah(s.vsMin ?? 0)} dari termurah
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className={`shrink-0 font-display text-base font-extrabold tabular-nums ${
+                        !s.available
+                          ? "text-xs font-semibold text-ink-300 dark:text-ink-600"
+                          : !s.inStock
+                          ? "text-ink-300 line-through dark:text-ink-600"
+                          : isBest
+                          ? "text-brand-700 dark:text-brand-400"
+                          : "text-ink-800 dark:text-ink-200"
+                      }`}
+                    >
+                      {s.available ? formatRupiah(s.price as number) : "Tidak tersedia"}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
         </div>
 
         <AddToCartButton

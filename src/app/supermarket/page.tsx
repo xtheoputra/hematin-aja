@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSupermarkets } from "@/lib/queries";
+import { getDisplayMode, isRealOnly } from "@/lib/mode";
 import StoreAvatar from "@/components/StoreAvatar";
 import PageHeader from "@/components/PageHeader";
 
@@ -8,7 +9,8 @@ export const dynamic = "force-dynamic";
 const MEDAL = ["🥇", "🥈", "🥉"];
 
 export default async function SupermarketListPage() {
-  const stores = await getSupermarkets();
+  const mode = getDisplayMode();
+  const stores = await getSupermarkets(isRealOnly(mode));
 
   return (
     <main>
@@ -22,6 +24,12 @@ export default async function SupermarketListPage() {
         <p className="px-1 text-xs text-ink-400 dark:text-ink-500 md:text-sm">
           Indeks harga: <b className="text-ink-600 dark:text-ink-300">100</b> = rata-rata
           pasar. Makin kecil makin murah.
+          {mode === "real" && (
+            <span className="text-emerald-600 dark:text-emerald-400">
+              {" "}
+              Mode Hanya Nyata: peringkat dari harga terverifikasi saja.
+            </span>
+          )}
         </p>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

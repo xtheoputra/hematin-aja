@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { compareCart } from "@/lib/queries";
+import { getDisplayMode, isRealOnly } from "@/lib/mode";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
         qty: Math.max(1, Math.floor(i.qty)),
       }));
 
-    const result = await compareCart(clean);
+    const result = await compareCart(clean, isRealOnly(getDisplayMode()));
     return NextResponse.json({ stores: result });
   } catch (err) {
     return NextResponse.json(

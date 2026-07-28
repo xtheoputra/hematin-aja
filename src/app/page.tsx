@@ -1,7 +1,10 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { getCategories, getProducts, getHomeStats } from "@/lib/queries";
+import { getDisplayMode, isRealOnly } from "@/lib/mode";
 import ProductCard from "@/components/ProductCard";
 import SearchControls from "@/components/SearchControls";
+import DataHonestyNote from "@/components/DataHonestyNote";
 import { Logo } from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import RefreshButton from "@/components/RefreshButton";
@@ -15,12 +18,19 @@ export default async function HomePage({
 }) {
   const search = searchParams.q?.trim() || undefined;
   const category = searchParams.kategori || undefined;
+  const mode = getDisplayMode();
+  const realOnly = isRealOnly(mode);
 
   const [categories, products, stats] = await Promise.all([
     getCategories(),
-    getProducts({ search, category }),
-    getHomeStats(),
+    getProducts({ search, category, realOnly }),
+    getHomeStats(realOnly),
   ]);
+
+  // Tampilkan yang ada harganya lebih dulu (relevan di mode "Hanya Nyata").
+  const sorted = [...products].sort(
+    (a, b) => Number(b.available) - Number(a.available)
+  );
 
   const isFiltering = Boolean(search || category);
   const activeCategory = categories.find((c) => c.slug === category);
@@ -70,8 +80,22 @@ export default async function HomePage({
         </Suspense>
       </div>
 
+      {/* ===== Catatan kejujuran data + CTA banding ===== */}
+      <div className="container-app space-y-3 pt-6 md:pt-8">
+        <DataHonestyNote realPriceCount={stats.realPriceCount} mode={mode} />
+        <Link
+          href="/bandingkan"
+          className="flex items-center justify-between gap-3 rounded-2xl border border-brand-200 bg-brand-50/60 px-4 py-3 text-sm font-semibold text-brand-700 transition hover:border-brand-300 hover:bg-brand-50 dark:border-brand-800 dark:bg-brand-900/20 dark:text-brand-300 dark:hover:border-brand-700"
+        >
+          <span className="flex items-center gap-2">
+            <span>📊</span> Lihat tabel banding harga semua supermarket
+          </span>
+          <span aria-hidden>→</span>
+        </Link>
+      </div>
+
       {/* ===== Hasil ===== */}
-      <div className="container-app space-y-4 pt-6 md:pt-8">
+      <div className="container-app space-y-4 pt-5">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-base font-bold text-ink-800 dark:text-ink-100 md:text-xl">
             {isFiltering
@@ -81,11 +105,11 @@ export default async function HomePage({
               : "Produk populer"}
           </h2>
           <p className="text-xs font-medium text-ink-400 md:text-sm">
-            {products.length} produk
+            {sorted.length} produk
           </p>
         </div>
 
-        {products.length === 0 ? (
+        {sorted.length === 0 ? (
           <div className="card flex flex-col items-center px-6 py-14 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-ink-100 text-3xl dark:bg-ink-800">
               🔍
@@ -99,7 +123,7 @@ export default async function HomePage({
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {products.map((p, i) => (
+            {sorted.map((p, i) => (
               <div
                 key={p.id}
                 className="animate-fade-up"

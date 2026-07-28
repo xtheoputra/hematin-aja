@@ -23,6 +23,16 @@ const items: Item[] = [
     ),
   },
   {
+    href: "/bandingkan",
+    label: "Banding",
+    icon: (a) => (
+      <Icon active={a}>
+        <path d="M4 6h7M4 12h10M4 18h6" />
+        <path d="M17 4v16M17 4l3 3M17 4l-3 3" />
+      </Icon>
+    ),
+  },
+  {
     href: "/supermarket",
     label: "Toko",
     icon: (a) => (

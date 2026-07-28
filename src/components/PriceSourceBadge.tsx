@@ -1,34 +1,62 @@
+import { sourceMeta } from "@/lib/source";
 import { formatDateShort } from "@/lib/format";
 
 /**
- * Penanda asal harga: "NYATA" (dari Open Prices) atau "ilustrasi" (simulasi).
- * Membuat jelas data mana yang bisa dipercaya.
+ * Penanda asal harga — inti prinsip kejujuran data:
+ *   ✓ Nyata        → harga terverifikasi (Open Prices)
+ *   ✓ Nyata · Toko → harga nyata hasil cek situs toko
+ *   Perkiraan      → estimasi (simulasi), bukan harga live
+ *   Tidak tersedia → belum ada data harga
+ *
+ * Beri `source` (string DB) — komponen menentukan tampilannya.
  */
 export default function PriceSourceBadge({
-  isReal,
+  source,
   date,
   className = "",
+  showEstimate = true,
 }: {
-  isReal: boolean;
-  date?: string;
+  source: string | null | undefined;
+  date?: string | null;
   className?: string;
+  /** sembunyikan badge "Perkiraan" (mis. agar UI tak ramai) */
+  showEstimate?: boolean;
 }) {
-  if (isReal) {
+  const meta = sourceMeta(source);
+  const title = date ? `${meta.label} · ${formatDateShort(date)}` : meta.label;
+  const base =
+    "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide whitespace-nowrap";
+
+  if (meta.kind === "real") {
     return (
       <span
-        title={date ? `Harga nyata · ${formatDateShort(date)} · Open Prices` : "Harga nyata"}
-        className={`inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 ${className}`}
+        title={title}
+        className={`${base} bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 ${className}`}
       >
-        ✓ Nyata
+        ✓ {meta.badge}
       </span>
     );
   }
+
+  if (meta.kind === "none") {
+    return (
+      <span
+        title={title}
+        className={`${base} bg-gold-100 font-semibold text-gold-700 dark:bg-gold-500/15 dark:text-gold-300 ${className}`}
+      >
+        {meta.badge}
+      </span>
+    );
+  }
+
+  // estimate
+  if (!showEstimate) return null;
   return (
     <span
-      title="Harga ilustrasi (simulasi), bukan harga live"
-      className={`inline-flex items-center rounded-full bg-ink-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-ink-400 dark:bg-ink-800 dark:text-ink-500 ${className}`}
+      title={title}
+      className={`${base} bg-ink-100 font-semibold text-ink-400 dark:bg-ink-800 dark:text-ink-500 ${className}`}
     >
-      ilustrasi
+      {meta.badge}
     </span>
   );
 }

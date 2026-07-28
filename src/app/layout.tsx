@@ -4,8 +4,10 @@ import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
 import BottomNav from "@/components/BottomNav";
 import TopNav from "@/components/TopNav";
+import ModeBar from "@/components/ModeBar";
 import Footer from "@/components/Footer";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import { getDisplayMode } from "@/lib/mode";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -43,6 +45,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const mode = getDisplayMode();
   return (
     <html lang="id" className={jakarta.variable} suppressHydrationWarning>
       <head>
@@ -56,7 +59,8 @@ export default function RootLayout({
       <body>
         <CartProvider>
           <div className="pb-nav flex min-h-screen flex-col bg-ink-50 dark:bg-ink-950 md:pb-0">
-            <TopNav />
+            <TopNav mode={mode} />
+            <ModeBar mode={mode} />
             <main className="flex-1">{children}</main>
             <Footer />
           </div>

@@ -11,6 +11,9 @@ next-env.d.ts
 # production
 /build
 
+# typescript (artefak incremental build)
+*.tsbuildinfo
+
 # database (SQLite)
 /prisma/*.db
 /prisma/*.db-journal

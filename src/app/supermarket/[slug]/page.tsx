@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSupermarketDetail } from "@/lib/queries";
+import { getDisplayMode, isRealOnly } from "@/lib/mode";
 import { formatRupiah } from "@/lib/format";
 import StoreAvatar from "@/components/StoreAvatar";
 import ProductThumb from "@/components/ProductThumb";
@@ -13,7 +14,7 @@ export default async function SupermarketDetailPage({
 }: {
   params: { slug: string };
 }) {
-  const s = await getSupermarketDetail(params.slug);
+  const s = await getSupermarketDetail(params.slug, isRealOnly(getDisplayMode()));
   if (!s) notFound();
 
   const cheaper = s.priceIndex < 100;
@@ -106,49 +107,60 @@ export default async function SupermarketDetailPage({
           <h2 className="mb-3 font-display text-sm font-bold text-ink-800 dark:text-ink-100">
             Produk di {s.name} ({s.products.length})
           </h2>
-          <ul className="grid gap-2 sm:grid-cols-2">
-            {s.products.map((p) => (
-              <Link
-                key={p.slug}
-                href={`/produk/${p.slug}`}
-                className="flex items-center gap-3 rounded-2xl border border-ink-200/60 p-2.5 transition active:scale-[0.99] hover:border-brand-200 dark:border-ink-800 dark:hover:border-brand-700"
-              >
-                <ProductThumb
-                  image={p.image}
-                  emoji={p.emoji}
-                  alt={p.name}
-                  className="h-11 w-11 shrink-0 rounded-xl"
-                  emojiClassName="text-2xl"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <p className="truncate text-sm font-semibold text-ink-800 dark:text-ink-100">
-                      {p.name}
-                    </p>
-                    <PriceSourceBadge isReal={p.isReal} className="shrink-0" />
-                  </div>
-                  {p.isCheapest ? (
-                    <p className="text-[11px] font-semibold text-brand-600">
-                      ⭐ Termurah di sini
-                    </p>
-                  ) : (
-                    <p className="text-[11px] text-ink-400">
-                      +{formatRupiah(p.vsMin)} vs {p.cheapestStore}
-                    </p>
-                  )}
-                </div>
-                <span
-                  className={`font-display text-base font-extrabold tabular-nums ${
-                    p.isCheapest
-                      ? "text-brand-700 dark:text-brand-400"
-                      : "text-ink-800 dark:text-ink-200"
-                  }`}
+          {s.products.length === 0 ? (
+            <p className="rounded-2xl bg-ink-50 py-8 text-center text-sm text-ink-400 dark:bg-ink-800/60">
+              Belum ada harga nyata untuk toko ini. Pilih mode <b>Semua</b> atau
+              tekan <b>Refresh</b> untuk menarik data.
+            </p>
+          ) : (
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {s.products.map((p) => (
+                <Link
+                  key={p.slug}
+                  href={`/produk/${p.slug}`}
+                  className="flex items-center gap-3 rounded-2xl border border-ink-200/60 p-2.5 transition active:scale-[0.99] hover:border-brand-200 dark:border-ink-800 dark:hover:border-brand-700"
                 >
-                  {formatRupiah(p.price)}
-                </span>
-              </Link>
-            ))}
-          </ul>
+                  <ProductThumb
+                    image={p.image}
+                    emoji={p.emoji}
+                    alt={p.name}
+                    className="h-11 w-11 shrink-0 rounded-xl"
+                    emojiClassName="text-2xl"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="truncate text-sm font-semibold text-ink-800 dark:text-ink-100">
+                        {p.name}
+                      </p>
+                      <PriceSourceBadge source={p.source} className="shrink-0" />
+                    </div>
+                    {!p.inStock ? (
+                      <p className="text-[11px] font-medium text-rose-400">Stok habis</p>
+                    ) : p.isCheapest ? (
+                      <p className="text-[11px] font-semibold text-brand-600">
+                        ⭐ Termurah di sini
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-ink-400">
+                        +{formatRupiah(p.vsMin)} vs {p.cheapestStore}
+                      </p>
+                    )}
+                  </div>
+                  <span
+                    className={`font-display text-base font-extrabold tabular-nums ${
+                      !p.inStock
+                        ? "text-ink-300 line-through dark:text-ink-600"
+                        : p.isCheapest
+                        ? "text-brand-700 dark:text-brand-400"
+                        : "text-ink-800 dark:text-ink-200"
+                    }`}
+                  >
+                    {formatRupiah(p.price)}
+                  </span>
+                </Link>
+              ))}
+            </ul>
+          )}
         </section>
       </div>
     </main>

@@ -1,14 +1,17 @@
 import Link from "next/link";
 import { getInsights } from "@/lib/queries";
+import { getDisplayMode } from "@/lib/mode";
 import { formatRupiah, formatPercent } from "@/lib/format";
 import StoreAvatar from "@/components/StoreAvatar";
 import PageHeader from "@/components/PageHeader";
+import DataHonestyNote from "@/components/DataHonestyNote";
 
 export const dynamic = "force-dynamic";
 
 export default async function InsightPage() {
-  const { topDrops, cheapestStoreOverall, recommendations } =
-    await getInsights();
+  const mode = getDisplayMode();
+  const { topDrops, cheapestStoreOverall, recommendations, realPriceCount } =
+    await getInsights(mode === "real");
 
   return (
     <main>
@@ -19,16 +22,7 @@ export default async function InsightPage() {
       />
 
       <div className="container-app space-y-4 pt-5">
-        {/* Catatan kejujuran data */}
-        <div className="flex items-start gap-2 rounded-2xl border border-gold-200 bg-gold-50 px-4 py-3 text-xs leading-relaxed text-gold-800 dark:border-gold-500/30 dark:bg-gold-500/10 dark:text-gold-300">
-          <span className="shrink-0">⚠️</span>
-          <span>
-            Sebagian harga masih <b>ilustrasi (simulasi)</b>. Harga yang sudah
-            terverifikasi ditandai <b>✓ Nyata</b> (sumber Open Prices). Tekan
-            tombol <b>🔄 Refresh harga</b> untuk menarik data nyata terbaru.
-            Tetap cek harga resmi di toko sebelum belanja.
-          </span>
-        </div>
+        <DataHonestyNote realPriceCount={realPriceCount} mode={mode} />
 
         {/* Toko termurah keseluruhan */}
         {cheapestStoreOverall && (

@@ -6,7 +6,7 @@ import ProductThumb from "./ProductThumb";
 import PriceSourceBadge from "./PriceSourceBadge";
 
 export default function ProductCard({ p }: { p: ProductListItem }) {
-  const hasSpread = p.spread > 0;
+  const hasSpread = p.available && p.spread > 0;
 
   return (
     <Link
@@ -31,37 +31,49 @@ export default function ProductCard({ p }: { p: ProductListItem }) {
 
       {/* Info */}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <h3 className="truncate text-sm font-semibold leading-tight text-ink-800 dark:text-ink-100">
-            {p.name}
-          </h3>
-          {p.hasRealPrice && <PriceSourceBadge isReal className="shrink-0" />}
-        </div>
+        <h3 className="truncate text-sm font-semibold leading-tight text-ink-800 dark:text-ink-100">
+          {p.name}
+        </h3>
         <p className="mt-0.5 text-[11px] text-ink-400">{p.unit}</p>
 
-        <div className="mt-1.5 flex items-baseline gap-1.5">
-          <span className="font-display text-lg font-extrabold leading-none tabular-nums text-ink-900 dark:text-white">
-            {formatRupiah(p.minPrice)}
-          </span>
-          {hasSpread && (
-            <span className="text-[11px] text-ink-400 line-through tabular-nums">
-              {formatRupiah(p.maxPrice)}
-            </span>
-          )}
-        </div>
+        {p.available ? (
+          <>
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <span className="font-display text-lg font-extrabold leading-none tabular-nums text-ink-900 dark:text-white">
+                {formatRupiah(p.minPrice)}
+              </span>
+              {hasSpread && (
+                <span className="text-[11px] text-ink-400 line-through tabular-nums">
+                  {formatRupiah(p.maxPrice)}
+                </span>
+              )}
+              <PriceSourceBadge source={p.cheapestSource} className="ml-0.5" />
+            </div>
 
-        <div className="mt-1.5 flex items-center gap-1.5">
-          <span
-            className="inline-block h-2 w-2 shrink-0 rounded-full ring-2 ring-white"
-            style={{ backgroundColor: p.cheapestStoreColor }}
-          />
-          <span className="truncate text-[11px] text-ink-500 dark:text-ink-400">
-            Termurah di <b className="font-semibold text-ink-700 dark:text-ink-200">{p.cheapestStore}</b>
-            {p.storeCount > 1 && (
-              <span className="text-ink-400"> · {p.storeCount} toko</span>
-            )}
-          </span>
-        </div>
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <span
+                className="inline-block h-2 w-2 shrink-0 rounded-full ring-2 ring-white"
+                style={{ backgroundColor: p.cheapestStoreColor }}
+              />
+              <span className="truncate text-[11px] text-ink-500 dark:text-ink-400">
+                Termurah di{" "}
+                <b className="font-semibold text-ink-700 dark:text-ink-200">
+                  {p.cheapestStore}
+                </b>
+                {p.storeCount > 1 && (
+                  <span className="text-ink-400"> · {p.storeCount} toko</span>
+                )}
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="mt-2">
+            <PriceSourceBadge source={null} />
+            <p className="mt-1 text-[11px] text-ink-400">
+              Belum ada harga nyata untuk produk ini.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Aksi */}
@@ -71,7 +83,9 @@ export default function ProductCard({ p }: { p: ProductListItem }) {
             −{formatRupiah(p.spread)}
           </span>
         ) : (
-          <span className="text-ink-300 transition group-hover:text-brand-500">→</span>
+          <span className="text-ink-300 transition group-hover:text-brand-500">
+            →
+          </span>
         )}
         <AddToCartButton
           item={{

@@ -17,17 +17,28 @@ export default function RefreshButton({ light = false }: { light?: boolean }) {
     setLoading(true);
     setMsg(null);
     try {
-      const r = await fetch("/api/refresh", { method: "POST" });
-      const d = await r.json();
-      if (d.ok) {
+      // Tarik dari kedua sumber harga NYATA sekaligus: Open Prices + scraper toko.
+      const settled = await Promise.allSettled([
+        fetch("/api/refresh", { method: "POST" }).then((r) => r.json()),
+        fetch("/api/scrape", { method: "POST" }).then((r) => r.json()),
+      ]);
+      const inserted = settled.reduce(
+        (sum, s) =>
+          sum + (s.status === "fulfilled" && s.value?.ok ? s.value.inserted ?? 0 : 0),
+        0
+      );
+      const allFailed = settled.every(
+        (s) => s.status === "rejected" || !s.value?.ok
+      );
+      if (allFailed) {
+        setMsg("Gagal memperbarui");
+      } else {
         setMsg(
-          d.inserted > 0
-            ? `+${d.inserted} harga nyata diperbarui`
+          inserted > 0
+            ? `+${inserted} harga nyata diperbarui`
             : "Belum ada harga nyata baru"
         );
         router.refresh();
-      } else {
-        setMsg("Gagal memperbarui");
       }
     } catch {
       setMsg("Gagal memperbarui");

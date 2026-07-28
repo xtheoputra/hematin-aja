@@ -18,3 +18,8 @@ export function formatPercent(n: number): string {
   const sign = n > 0 ? "+" : "";
   return `${sign}${n.toFixed(1)}%`;
 }
+
+// Angka rupiah ringkas tanpa simbol "Rp" (untuk sel tabel yang sempit).
+export function formatNumber(n: number): string {
+  return new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(n);
+}

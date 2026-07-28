@@ -97,7 +97,8 @@ export async function refreshRealPrices(
   prisma: PrismaClient,
   opts: { pages?: number } = {}
 ): Promise<RefreshResult> {
-  const pages = opts.pages ?? 4;
+  // Tarik banyak halaman; loop berhenti otomatis saat data habis (items kosong).
+  const pages = opts.pages ?? 20;
 
   const [products, supermarkets, categories] = await Promise.all([
     prisma.product.findMany({ select: { id: true, barcode: true } }),

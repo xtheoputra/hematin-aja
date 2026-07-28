@@ -5,10 +5,13 @@ import { usePathname } from "next/navigation";
 import { Logo } from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 import RefreshButton from "./RefreshButton";
+import DisplayModeToggle from "./DisplayModeToggle";
 import { useCart } from "./CartProvider";
+import type { DisplayMode } from "@/lib/modeShared";
 
 const links = [
   { href: "/", label: "Beranda" },
+  { href: "/bandingkan", label: "Bandingkan" },
   { href: "/supermarket", label: "Supermarket" },
   { href: "/insight", label: "Insight" },
 ];
@@ -17,7 +20,7 @@ const links = [
  * Navbar atas untuk tampilan desktop/tablet (≥ md).
  * Di layar HP disembunyikan — navigasi memakai BottomNav.
  */
-export default function TopNav() {
+export default function TopNav({ mode }: { mode: DisplayMode }) {
   const pathname = usePathname();
   const { count } = useCart();
 
@@ -51,6 +54,7 @@ export default function TopNav() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
+          <DisplayModeToggle mode={mode} className="mr-1 hidden lg:inline-flex" />
           <RefreshButton />
           <ThemeToggle />
           <Link

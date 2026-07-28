@@ -20,6 +20,14 @@ export type Scraper = {
   name: string;
   /** true = ikut dijalankan oleh runner. Set false untuk menonaktifkan. */
   enabled: boolean;
+  /**
+   * Nilai `source` yang disimpan ke DB untuk hasil scraper ini.
+   *  - "scrape"      → harga NYATA dari situs toko (ditandai "✓ Nyata · Toko").
+   *  - "scrape-demo" → simulasi (ditandai "Perkiraan"); JANGAN dipakai untuk
+   *                    data yang diklaim nyata.
+   * Default: "scrape".
+   */
+  source?: string;
   /** ambil & parse harga. Lempar error jika gagal. */
   run(): Promise<ScrapedPrice[]>;
 };

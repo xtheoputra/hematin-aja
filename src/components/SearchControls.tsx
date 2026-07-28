@@ -5,7 +5,15 @@ import { useEffect, useState } from "react";
 
 type Cat = { slug: string; name: string; icon: string };
 
-export default function SearchControls({ categories }: { categories: Cat[] }) {
+export default function SearchControls({
+  categories,
+  basePath = "/",
+  placeholder = "Cari produk… (mis. Indomie, minyak goreng)",
+}: {
+  categories: Cat[];
+  basePath?: string;
+  placeholder?: string;
+}) {
   const router = useRouter();
   const params = useSearchParams();
   const activeCat = params.get("kategori") ?? "";
@@ -17,7 +25,8 @@ export default function SearchControls({ categories }: { categories: Cat[] }) {
       const sp = new URLSearchParams(Array.from(params.entries()));
       if (q) sp.set("q", q);
       else sp.delete("q");
-      router.replace(`/?${sp.toString()}`, { scroll: false });
+      const qs = sp.toString();
+      router.replace(qs ? `${basePath}?${qs}` : basePath, { scroll: false });
     }, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -27,7 +36,8 @@ export default function SearchControls({ categories }: { categories: Cat[] }) {
     const sp = new URLSearchParams(Array.from(params.entries()));
     if (slug && slug !== activeCat) sp.set("kategori", slug);
     else sp.delete("kategori");
-    router.replace(`/?${sp.toString()}`, { scroll: false });
+    const qs = sp.toString();
+    router.replace(qs ? `${basePath}?${qs}` : basePath, { scroll: false });
   }
 
   return (
@@ -41,7 +51,7 @@ export default function SearchControls({ categories }: { categories: Cat[] }) {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           inputMode="search"
-          placeholder="Cari produk… (mis. Indomie, minyak goreng)"
+          placeholder={placeholder}
           className="w-full rounded-2xl border border-ink-200/70 bg-white py-3.5 pl-11 pr-10 text-sm font-medium text-ink-800 shadow-card outline-none transition placeholder:font-normal placeholder:text-ink-400 focus:border-brand-400 focus:ring-4 focus:ring-brand-100 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-100 dark:focus:ring-brand-900/40"
         />
         {q && (
