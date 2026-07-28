@@ -354,6 +354,18 @@ Dipertajam memakai kerangka [`FASE-1.5` §12](FASE-1.5-CHECKLIST.md):
 
 ---
 
+## 🔜 Berikutnya
+
+[`FASE-3-CHECKLIST.md`](FASE-3-CHECKLIST.md) — pipeline OCR struk.
+
+⚠️ **Fase 3 tidak menunggu fase ini.** OCR cukup menyambung ke ujung rangkaian
+hybrid §6 apa pun isinya — tahap 1–3 dari Fase 1 sudah memadai. Karena gerbang
+masuk §0 mungkin tidak pernah terbuka, jangan merantai Fase 3 di belakang fase
+ini.
+
+---
+
 *Prasyarat: [`FASE-1`](FASE-1-CHECKLIST.md) · [`FASE-1.5`](FASE-1.5-CHECKLIST.md) ·
+Berikutnya: [`FASE-3`](FASE-3-CHECKLIST.md) ·
 Arah besar: [`PETA-JALAN.md`](PETA-JALAN.md) ·
 Riwayat: [`CATATAN-SESI.md`](CATATAN-SESI.md)*

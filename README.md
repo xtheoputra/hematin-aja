@@ -18,6 +18,9 @@ lengkap dengan **insight** & rekomendasi hemat.
 - **[`FASE-2-CHECKLIST.md`](FASE-2-CHECKLIST.md)** — pencocokan produk dengan
   embedding. **Baca §0 dulu**: ada gerbang masuk yang harus dilewati sebelum
   fase ini layak dikerjakan.
+- **[`FASE-3-CHECKLIST.md`](FASE-3-CHECKLIST.md)** — pipeline OCR struk. Tidak
+  bergantung pada Fase 2, dan bisa dinaikkan lebih awal karena struk adalah
+  sumber harga nyata terkuat untuk toko fisik.
 - **[`PETA-JALAN.md`](PETA-JALAN.md)** — arah jangka panjang: visi, arsitektur
   target, desain data, prompt AI, dan tahapan pengerjaan.
 - **[`CATATAN-SESI.md`](CATATAN-SESI.md)** — riwayat pengerjaan per sesi &
