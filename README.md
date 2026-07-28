@@ -15,6 +15,9 @@ lengkap dengan **insight** & rekomendasi hemat.
 - **[`FASE-1.5-CHECKLIST.md`](FASE-1.5-CHECKLIST.md)** — penguatan sebelum
   skala: batas kueri, validasi harga, caching, log, keamanan, dan cara mengukur
   akurasi pencocokan.
+- **[`FASE-2-CHECKLIST.md`](FASE-2-CHECKLIST.md)** — pencocokan produk dengan
+  embedding. **Baca §0 dulu**: ada gerbang masuk yang harus dilewati sebelum
+  fase ini layak dikerjakan.
 - **[`PETA-JALAN.md`](PETA-JALAN.md)** — arah jangka panjang: visi, arsitektur
   target, desain data, prompt AI, dan tahapan pengerjaan.
 - **[`CATATAN-SESI.md`](CATATAN-SESI.md)** — riwayat pengerjaan per sesi &

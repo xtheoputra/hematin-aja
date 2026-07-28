@@ -354,6 +354,14 @@ Angka akurasi tanpa cara ukur cuma hiasan. Yang bisa dibuktikan:
 
 ---
 
+## 🔜 Berikutnya
+
+[`FASE-2-CHECKLIST.md`](FASE-2-CHECKLIST.md) — pencocokan dengan embedding.
+Perhatikan: **log kueri gagal dari §6 adalah gerbang masuknya**. Tanpa bukti
+kegagalan nyata, Fase 2 belum layak dikerjakan.
+
+---
+
 *Riwayat per sesi: [`CATATAN-SESI.md`](CATATAN-SESI.md) ·
 Fase sebelumnya: [`FASE-1-CHECKLIST.md`](FASE-1-CHECKLIST.md) ·
 Arah besar: [`PETA-JALAN.md`](PETA-JALAN.md)*
