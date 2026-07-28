@@ -8,6 +8,13 @@ lengkap dengan **insight** & rekomendasi hemat.
 > modular sudah disiapkan untuk mengisi data dari situs toko sungguhan (lihat
 > bagian Scraper). Harga di seed **bukan** harga resmi toko.
 
+## 📚 Dokumen
+
+- **[`PETA-JALAN.md`](PETA-JALAN.md)** — arah jangka panjang: visi, arsitektur
+  target, desain data, prompt AI, dan tahapan pengerjaan.
+- **[`CATATAN-SESI.md`](CATATAN-SESI.md)** — riwayat pengerjaan per sesi &
+  daftar pekerjaan yang masih terbuka.
+
 ## ✨ Fitur
 
 - 🔎 **Cari & filter** produk per kategori
