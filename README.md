@@ -10,6 +10,8 @@ lengkap dengan **insight** & rekomendasi hemat.
 
 ## 📚 Dokumen
 
+- **[`FASE-1-CHECKLIST.md`](FASE-1-CHECKLIST.md)** — rencana kerja yang sedang
+  berjalan: normalisasi nama produk, tabel alias, input admin, dan uji.
 - **[`PETA-JALAN.md`](PETA-JALAN.md)** — arah jangka panjang: visi, arsitektur
   target, desain data, prompt AI, dan tahapan pengerjaan.
 - **[`CATATAN-SESI.md`](CATATAN-SESI.md)** — riwayat pengerjaan per sesi &

@@ -365,6 +365,10 @@ Diurutkan berdasarkan ketergantungan, bukan kemudahan.
 
 ### Fase 1 — Bukti & Data Nyata 🔴 *gerbang untuk semua fase lain*
 
+> 📋 **Rencana kerja rincinya ada di [`FASE-1-CHECKLIST.md`](FASE-1-CHECKLIST.md)** —
+> termasuk normalisasi nama produk & tabel alias yang **dimajukan dari Fase 2**,
+> karena pencocokan produk adalah titik gagal yang sesungguhnya.
+
 - [ ] Jalankan aplikasi, buktikan fitur Fase 0 benar-benar bekerja
 - [ ] Buktikan scraper `klikindomaret` menghasilkan harga; cocokkan nama field
       dengan respons asli
