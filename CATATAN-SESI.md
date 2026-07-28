@@ -107,6 +107,62 @@ npm run dev          # jalankan di http://localhost:3000
 
 ---
 
+## Sesi 5 — 28 Juli 2026 · "Label Umur Data"
+
+**Status akhir:** tsc nol error, build hijau, **aplikasi dijalankan & diperiksa
+langsung**, di-commit & di-push (`77ccb3e`).
+
+### Keputusan: cakupan tetap penuh, kekuatannya di label
+
+Sempat diusulkan mengecilkan cakupan (18 toko × 100 produk = 1.800 sel harga,
+terisi nyata cuma 10). **Ditolak** — katalog tetap penuh, kejujurannya
+diperkuat lewat pelabelan.
+
+### Celah yang ditutup
+
+Label **asal** harga sudah ada sejak Sesi 4, tapi **umur**-nya cuma tersimpan di
+atribut `title` alias tooltip — tak bisa disentuh di HP.
+
+> Harga berlabel **"✓ Nyata" yang berumur sebulan** justru lebih menyesatkan
+> daripada yang berlabel "Perkiraan", karena "Nyata" terbaca sebagai layak
+> dipercaya.
+
+### Yang ditambahkan
+
+- `lib/format.ts` — `daysSince()`, `formatAge()` → *"hari ini"*, *"kemarin"*,
+  *"34 hari lalu"*, *"8 bulan lalu"*
+- `lib/freshness.ts` — tiga tingkat: **segar** (≤7 hari), **lawas** (≤30),
+  **kedaluwarsa** (>30). Melengkapi `source.ts`: *source* menjawab "dari mana",
+  *freshness* menjawab "kapan"
+- `DataAgeBadge` — label umur yang terlihat langsung, ⚠ saat kedaluwarsa
+- `ProductCard` + halaman detail — umur per harga (`cheapestRecordedAt`)
+- `DataHonestyNote` — dipecah dua kotak: asal harga + **kotak umur data** yang
+  berubah merah & menyarankan Refresh bila lewat sebulan
+- `CompareTable` — sel ber-⚠, tooltip memuat asal & umur, plus legenda
+
+### 🔬 Temuan dari MENJALANKAN aplikasinya
+
+Ini pertama kalinya aplikasi benar-benar dibuka (melunasi utang Sesi 4):
+
+| Temuan | Angka |
+| --- | --- |
+| Harga berlabel **"Nyata" ternyata berumur 2–8 bulan** | kelemahan datanya bukan cuma jumlah, tapi umur |
+| Sel kedaluwarsa di `/bandingkan` | **790** — praktis seluruh harga yang tampil |
+| Waktu muat beranda (setelah kompilasi) | 0,45–0,53 detik |
+| Waktu muat `/bandingkan` | 0,23–0,25 detik |
+
+Angka terakhir mengonfirmasi penilaian ulang prioritas: `priceInclude` tanpa
+`take` memang **belum terasa** di skala sekarang.
+
+### ⚠️ Yang MASIH terbuka
+
+1. **Harga nyata tetap 10 baris**, dan kini terbukti berumur 2–8 bulan
+2. Scraper `klikindomaret` belum terbukti menghasilkan harga
+3. Belum ada uji otomatis
+4. Form admin belum ada — jalur tercepat menambah harga nyata
+
+---
+
 ## Sesi 1–3 (ringkas, dari riwayat git)
 
 - `07957d2` — MVP: PWA banding harga supermarket Indonesia
