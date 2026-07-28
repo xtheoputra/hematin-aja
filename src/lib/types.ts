@@ -52,6 +52,7 @@ export type ProductListItem = {
   cheapestStore: string; // nama supermarket termurah
   cheapestStoreColor: string;
   cheapestSource: string | null;
+  cheapestRecordedAt: string | null; // kapan harga termurah itu dicek
   priceIsReal: boolean; // harga termurah yang ditampilkan berasal dari sumber nyata
   storeCount: number; // jumlah toko dengan harga (mode aktif)
   totalStores: number; // total supermarket dipantau
@@ -164,6 +165,7 @@ export type CompareMatrix = {
   stores: { slug: string; name: string; color: string; type: string }[];
   rows: CompareRow[];
   realPriceCount: number;
+  latestRecordedAt: string | null; // catatan harga terbaru di seluruh DB
 };
 
 export type Insights = {

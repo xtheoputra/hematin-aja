@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getInsights } from "@/lib/queries";
+import { getInsights, getLatestRecordedAt } from "@/lib/queries";
 import { getDisplayMode } from "@/lib/mode";
 import { formatRupiah, formatPercent } from "@/lib/format";
 import StoreAvatar from "@/components/StoreAvatar";
@@ -10,8 +10,10 @@ export const dynamic = "force-dynamic";
 
 export default async function InsightPage() {
   const mode = getDisplayMode();
-  const { topDrops, cheapestStoreOverall, recommendations, realPriceCount } =
-    await getInsights(mode === "real");
+  const [
+    { topDrops, cheapestStoreOverall, recommendations, realPriceCount },
+    latestRecordedAt,
+  ] = await Promise.all([getInsights(mode === "real"), getLatestRecordedAt()]);
 
   return (
     <main>
@@ -22,7 +24,11 @@ export default async function InsightPage() {
       />
 
       <div className="container-app space-y-4 pt-5">
-        <DataHonestyNote realPriceCount={realPriceCount} mode={mode} />
+        <DataHonestyNote
+          realPriceCount={realPriceCount}
+          mode={mode}
+          latestRecordedAt={latestRecordedAt}
+        />
 
         {/* Toko termurah keseluruhan */}
         {cheapestStoreOverall && (

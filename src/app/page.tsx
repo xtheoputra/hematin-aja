@@ -82,7 +82,11 @@ export default async function HomePage({
 
       {/* ===== Catatan kejujuran data + CTA banding ===== */}
       <div className="container-app space-y-3 pt-6 md:pt-8">
-        <DataHonestyNote realPriceCount={stats.realPriceCount} mode={mode} />
+        <DataHonestyNote
+          realPriceCount={stats.realPriceCount}
+          mode={mode}
+          latestRecordedAt={stats.latestRecordedAt}
+        />
         <Link
           href="/bandingkan"
           className="flex items-center justify-between gap-3 rounded-2xl border border-brand-200 bg-brand-50/60 px-4 py-3 text-sm font-semibold text-brand-700 transition hover:border-brand-300 hover:bg-brand-50 dark:border-brand-800 dark:bg-brand-900/20 dark:text-brand-300 dark:hover:border-brand-700"

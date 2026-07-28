@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { formatNumber } from "@/lib/format";
+import { formatNumber, formatAge } from "@/lib/format";
+import { freshnessOf } from "@/lib/freshness";
+import { sourceMeta } from "@/lib/source";
 import ProductThumb from "./ProductThumb";
 import type { CompareMatrix, StoreCell } from "@/lib/types";
 
@@ -94,13 +96,25 @@ function Cell({ c }: { c: StoreCell }) {
       </td>
     );
   }
+  const stale = freshnessOf(c.recordedAt) === "stale";
+  const title = [
+    sourceMeta(c.source).badge,
+    c.recordedAt ? `dicek ${formatAge(c.recordedAt)}` : null,
+    stale ? "data kedaluwarsa — harga kemungkinan sudah berubah" : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <td
       className={`px-2 py-2 text-center ${
         c.isCheapest ? "bg-brand-50 dark:bg-brand-900/25" : ""
       }`}
     >
-      <span className="inline-flex items-center gap-0.5 whitespace-nowrap">
+      <span
+        title={title}
+        className="inline-flex items-center gap-0.5 whitespace-nowrap"
+      >
         <span
           className={`tabular-nums ${
             !c.inStock
@@ -117,6 +131,14 @@ function Cell({ c }: { c: StoreCell }) {
         {c.isReal && c.inStock && (
           <span className="text-[9px] text-emerald-500" title="Harga nyata">
             ✓
+          </span>
+        )}
+        {stale && c.inStock && (
+          <span
+            className="text-[9px] leading-none text-rose-400"
+            aria-label="data kedaluwarsa"
+          >
+            ⚠
           </span>
         )}
       </span>

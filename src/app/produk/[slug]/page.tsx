@@ -9,6 +9,7 @@ import StoreAvatar from "@/components/StoreAvatar";
 import ProductThumb from "@/components/ProductThumb";
 import ThemeToggle from "@/components/ThemeToggle";
 import PriceSourceBadge from "@/components/PriceSourceBadge";
+import DataAgeBadge from "@/components/DataAgeBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -201,6 +202,12 @@ export default async function ProductPage({
                           date={s.recordedAt}
                           className="shrink-0"
                         />
+                        {s.available && (
+                          <DataAgeBadge
+                            date={s.recordedAt}
+                            className="shrink-0"
+                          />
+                        )}
                       </div>
                       {!s.available ? (
                         <p className="text-[11px] text-ink-400">Belum ada data harga</p>

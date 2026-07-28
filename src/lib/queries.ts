@@ -164,17 +164,32 @@ export async function getCategories() {
 }
 
 // Statistik ringkas untuk hero beranda.
+/**
+ * Kapan harga terakhir kali dicatat. Dipakai untuk melabeli umur data agar
+ * pengguna tahu seberapa mutakhir angka yang dilihatnya.
+ */
+export async function getLatestRecordedAt(): Promise<string | null> {
+  const latest = await prisma.price.findFirst({
+    orderBy: { recordedAt: "desc" },
+    select: { recordedAt: true },
+  });
+  return latest?.recordedAt.toISOString() ?? null;
+}
+
 export async function getHomeStats(realOnly = false): Promise<{
   storeCount: number;
   productCount: number;
   totalSaving: number;
   realPriceCount: number;
+  latestRecordedAt: string | null;
 }> {
-  const [storeCount, products, realPriceCount] = await Promise.all([
-    prisma.supermarket.count(),
-    prisma.product.findMany({ include: { prices: priceInclude } }),
-    prisma.price.count({ where: { source: { in: REAL_SOURCES } } }),
-  ]);
+  const [storeCount, products, realPriceCount, latestRecordedAt] =
+    await Promise.all([
+      prisma.supermarket.count(),
+      prisma.product.findMany({ include: { prices: priceInclude } }),
+      prisma.price.count({ where: { source: { in: REAL_SOURCES } } }),
+      getLatestRecordedAt(),
+    ]);
 
   let totalSaving = 0;
   for (const p of products) {
@@ -186,7 +201,13 @@ export async function getHomeStats(realOnly = false): Promise<{
     totalSaving += Math.max(...prices) - Math.min(...prices);
   }
 
-  return { storeCount, productCount: products.length, totalSaving, realPriceCount };
+  return {
+    storeCount,
+    productCount: products.length,
+    totalSaving,
+    realPriceCount,
+    latestRecordedAt,
+  };
 }
 
 export async function getProducts(opts: {
@@ -239,6 +260,7 @@ export async function getProducts(opts: {
       cheapestStore: cheapest?.supermarketName ?? "-",
       cheapestStoreColor: cheapest?.color ?? "#10b981",
       cheapestSource: cheapest?.source ?? null,
+      cheapestRecordedAt: cheapest?.recordedAt ?? null,
       priceIsReal: cheapest?.isReal ?? false,
       storeCount: inStock.length,
       totalStores,
@@ -338,7 +360,7 @@ export async function getCompareMatrix(opts: {
   limit?: number;
 }): Promise<CompareMatrix> {
   const { search, category, realOnly = false, limit = 60 } = opts;
-  const [supermarkets, products, realPriceCount] = await Promise.all([
+  const [supermarkets, products, realPriceCount, latestRecordedAt] = await Promise.all([
     prisma.supermarket.findMany({ select: SM_SELECT, orderBy: { name: "asc" } }),
     prisma.product.findMany({
       where: {
@@ -359,6 +381,7 @@ export async function getCompareMatrix(opts: {
       take: limit,
     }),
     prisma.price.count({ where: { source: { in: REAL_SOURCES } } }),
+    getLatestRecordedAt(),
   ]);
 
   const rows = products.map((p) => {
@@ -387,6 +410,7 @@ export async function getCompareMatrix(opts: {
     })),
     rows,
     realPriceCount,
+    latestRecordedAt,
   };
 }
 

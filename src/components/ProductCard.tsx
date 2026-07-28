@@ -4,6 +4,7 @@ import { formatRupiah } from "@/lib/format";
 import AddToCartButton from "./AddToCartButton";
 import ProductThumb from "./ProductThumb";
 import PriceSourceBadge from "./PriceSourceBadge";
+import DataAgeBadge from "./DataAgeBadge";
 
 export default function ProductCard({ p }: { p: ProductListItem }) {
   const hasSpread = p.available && p.spread > 0;
@@ -64,6 +65,10 @@ export default function ProductCard({ p }: { p: ProductListItem }) {
                   <span className="text-ink-400"> · {p.storeCount} toko</span>
                 )}
               </span>
+              <DataAgeBadge
+                date={p.cheapestRecordedAt}
+                className="ml-auto shrink-0"
+              />
             </div>
           </>
         ) : (

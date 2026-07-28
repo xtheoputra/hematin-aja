@@ -48,7 +48,11 @@ export default async function BandingkanPage({
           />
         </Suspense>
 
-        <DataHonestyNote realPriceCount={matrix.realPriceCount} mode={mode} />
+        <DataHonestyNote
+          realPriceCount={matrix.realPriceCount}
+          mode={mode}
+          latestRecordedAt={matrix.latestRecordedAt}
+        />
 
         {/* Legenda */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-1 text-[11px] text-ink-500 dark:text-ink-400">
@@ -64,6 +68,9 @@ export default async function BandingkanPage({
           </span>
           <span className="flex items-center gap-1">
             <span className="text-ink-300 dark:text-ink-600">—</span> Tidak tersedia
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="text-rose-400">⚠</span> Data kedaluwarsa (&gt; 30 hari)
           </span>
           <span className="ml-auto text-ink-400">harga dalam Rupiah · geser ↔</span>
         </div>
