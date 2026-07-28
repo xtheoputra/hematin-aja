@@ -12,6 +12,9 @@ lengkap dengan **insight** & rekomendasi hemat.
 
 - **[`FASE-1-CHECKLIST.md`](FASE-1-CHECKLIST.md)** — rencana kerja yang sedang
   berjalan: normalisasi nama produk, tabel alias, input admin, dan uji.
+- **[`FASE-1.5-CHECKLIST.md`](FASE-1.5-CHECKLIST.md)** — penguatan sebelum
+  skala: batas kueri, validasi harga, caching, log, keamanan, dan cara mengukur
+  akurasi pencocokan.
 - **[`PETA-JALAN.md`](PETA-JALAN.md)** — arah jangka panjang: visi, arsitektur
   target, desain data, prompt AI, dan tahapan pengerjaan.
 - **[`CATATAN-SESI.md`](CATATAN-SESI.md)** — riwayat pengerjaan per sesi &

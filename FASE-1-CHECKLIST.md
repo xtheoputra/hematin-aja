@@ -316,7 +316,13 @@ Fase 1 dinyatakan selesai **hanya bila semuanya tercentang**:
 
 ---
 
-## 9. 🔜 Fase 2 (pratinjau — jangan dikerjakan sekarang)
+## 9. 🔜 Berikutnya
+
+**Fase 1.5 — penguatan sebelum skala:** batas kueri, validasi harga, caching,
+pencatatan log, keamanan, dan cara mengukur akurasi. Rinciannya di
+[`FASE-1.5-CHECKLIST.md`](FASE-1.5-CHECKLIST.md).
+
+**Fase 2 (pratinjau — jangan dikerjakan sekarang):**
 
 - OCR struk
 - Pencocokan produk berbasis AI (embedding)
