@@ -7,33 +7,36 @@ tanpa membaca ulang seluruh kode.
 
 ## 🌅 BESOK MULAI DARI SINI
 
-**Kondisi tinggal:** tree **bersih**, sinkron dengan `origin/main` di `89e38ea`.
-`npx tsc --noEmit` nol error, `npm run build` hijau, aplikasi sudah terbukti
-jalan (3 halaman `200`, log bersih).
+**Kondisi tinggal:** `npx tsc --noEmit` nol error, `npm run build` hijau,
+**`npm test` 166/166 lulus**, aplikasi sudah dijalankan & diperiksa
+(9 halaman `200`, log bersih).
 
-### Langkah pertama: **form admin input harga manual**
+### ⚠️ Pertama: setel sandi admin Anda sendiri
 
-Ini jalur **tercepat** menambah harga nyata, dan tidak bergantung pada apa pun
-yang belum terbukti (scraper masih tanda tanya).
+Sesi ini membuat `.env.local` berisi sandi sementara **`hematin-dev-2026`**.
+Berkas itu **tidak** dilacak git, tapi tetap **ganti nilainya** sebelum
+aplikasinya dipakai serius:
 
-Kondisi yang memaksa: dari 16.390 baris harga hanya **10** yang nyata — dan
-sesi kemarin membuktikan yang 10 itu pun **berumur 2–8 bulan**. Selama ini
-belum ada satu pun cara memasukkan harga nyata lewat aplikasi.
+```
+ADMIN_PASSWORD="sandi-pilihan-anda"
+```
 
-Rinciannya sudah tertulis di
-[`FASE-1-CHECKLIST.md` §5](FASE-1-CHECKLIST.md). Ringkasnya:
+### Langkah pertama: **isi harga nyata**
 
-- [ ] Halaman `/admin` **berpelindung sandi** (jangan biarkan terbuka)
-- [ ] `POST /api/admin/prices` — tambah harga manual, `source = "manual"`
-- [ ] Form: produk × toko × harga × tanggal
-- [ ] Validasi: harga > 0, produk & toko wajib ada
-- [ ] Tabel produk yang belum punya harga nyata → daftar kerja yang kelihatan
-- [ ] Tambahkan `"manual"` ke `sourceKindOf()` di `src/lib/source.ts` sebagai
-      **`real`** — kalau lupa, harga yang Anda ketik sendiri akan tampil sebagai
-      *"Perkiraan"*
+Seluruh pekerjaan **kode** Fase 1 & 1.5 sudah selesai. Yang tersisa sekarang
+murni **pekerjaan data**, dan alatnya sudah ada:
 
-Setelah form jadi: isi harga nyata untuk kategori fokus (mie instan), lalu
-lihat mode **Hanya Nyata** akhirnya berisi sesuatu.
+1. Buka `/admin`, masuk pakai sandi.
+2. Bar "Kemajuan harga nyata" menunjukkan angka sesungguhnya — sekarang
+   **10 dari 100 produk (10%)**, 11 baris harga nyata.
+3. Tabel "Belum punya harga nyata" adalah antreannya, yang paling kosong di atas.
+4. Fokus **satu kategori dulu: mie instan**. 15 produk × 5 toko = 75 harga nyata,
+   selesai dalam hitungan hari. Tersebar tipis ke 100 produk tidak akan pernah
+   terasa selesai.
+5. Ukur kapan saja: `npm run db:statistik`.
+
+Setelah ada ≥ 75 harga nyata, mode **Hanya Nyata** akhirnya berisi sesuatu, dan
+Definisi Selesai Fase 1 (`FASE-1-CHECKLIST.md` §8) tinggal satu baris lagi.
 
 ### ✅ Keputusan yang SUDAH diambil — jangan dibahas ulang
 
@@ -47,13 +50,72 @@ lihat mode **Hanya Nyata** akhirnya berisi sesuatu.
 
 ### ⛔ Jangan dikerjakan dulu
 
-- **Optimasi `priceInclude`** — terukur 0,23–0,53 detik, belum terasa
-- **Lindungi `/api/refresh` & `/api/scrape`** — wajib beres **sebelum deploy**,
-  bukan sekarang (masih localhost)
-- **Normalisasi nama & tabel alias** — pencarian lebih baik atas harga basi
-  tetap harga basi. Kerjakan **setelah** ada data nyata
-- **Menulis dokumen rencana baru** — sudah ada 7 dokumen (1.900+ baris) untuk
-  4.500 baris kode. Rasionya sudah terlalu berat ke rencana
+- **Fase 2 (embedding)** — gerbang masuknya adalah **bukti kegagalan nyata**
+  dari log kueri gagal. Log-nya baru saja mulai terisi; belum ada buktinya.
+- **Adapter scraper baru** — `klikindomaret` masih belum terbukti jalan.
+  Input manual lebih cepat berbuah.
+- **Menulis dokumen rencana baru** — rasionya sudah berat ke rencana.
+
+---
+
+## Sesi 6 — 4 Agustus 2026 · "Semua PR Dikerjakan"
+
+**Status akhir:** `tsc` nol error, `npm run build` hijau, **`npm test` 166/166**,
+aplikasi dijalankan & diperiksa langsung.
+
+Sesi ini menutup **seluruh** butir terbuka Fase 1 **dan** Fase 1.5 sekaligus.
+
+### Yang dikerjakan
+
+| # | Pekerjaan | Hasil |
+| --- | --- | --- |
+| 1 | **Kerangka uji** | `npm test` — kerangka sendiri di `uji/`, **nol dependensi baru** (pakai `tsx` yang sudah ada) |
+| 2 | **Normalisasi & pencocokan** | `src/lib/normalize.ts` — murni, tanpa DB. Token diseragamkan & diurutkan; gerbang keras merek + ukuran |
+| 3 | **Skema** | `normalizedName` + `ProductAlias` + `SearchLog` + `EventLog`. 100 produk dinormalisasi, 45 alias dari slug |
+| 4 | **Alur pencarian** | persis → alias → token → typo, berhenti di tingkat pertama yang berhasil |
+| 5 | **Batas kueri harga** | **16.390 → 399 baris, 353 ms → 35 ms** (`npm run ukur`) + paginasi 24/halaman |
+| 6 | **Log tersimpan** | tabel `EventLog` + percobaan ulang berjeda menaik; terbaca di `/admin` |
+| 7 | **Keamanan** | `/api/refresh` & `/api/scrape` **bersandi + rate limit**; error mentah tak lagi bocor |
+| 8 | **Validasi harga** | median historis 0,25×–4× + jaring pengaman kategori; penolakan dicatat |
+| 9 | **Halaman `/admin`** | login, 3 form, daftar kerja, kueri gagal, catatan kejadian |
+| 10 | **Pecah `queries.ts`** | 718 baris → 7 modul; logika murni terpisah dari Prisma |
+| 11 | **Caching** | lapisan data, kunci **wajib** memuat `realOnly`, batal tiap harga baru |
+| 12 | **Presisi & recall** | 54 pasang berlabel → **presisi 98,1%, recall 100%** (target 95% / 80%) |
+| 13 | **Penjadwalan** | `jadwalkan.ps1` → Windows Task Scheduler |
+
+### 🐞 Dua bug yang uji hijau TIDAK tangkap
+
+**1. Gerbang merek menggugurkan kasus andalannya sendiri.**
+`"mie"` adalah token merek yang sah (dari **Mie** Sedaap), jadi
+`"mie goreng indomie"` ditolak sebagai *"merek berbeda"* — persis kueri yang
+jadi alasan seluruh pencocokan ini ditulis ulang. Uji logika murni **lolos**;
+yang menangkapnya uji terhadap **database sungguhan**.
+→ Kata kategori sekarang dikecualikan dari gerbang merek.
+
+**2. Bar kemajuan di `/admin` berbohong.**
+Angka "sudah punya harga nyata" diturunkan dari panjang daftar yang **sudah
+dipotong** 60 baris, jadi ia mengaku **40 dari 100** padahal harga nyata baru
+ada 11. Seluruh uji hijau saat itu; ketahuan setelah halamannya **benar-benar
+dibuka**. Di aplikasi yang seluruh gunanya adalah kejujuran data, angka hiasan
+begitu lebih buruk daripada tidak ada angka.
+→ Dihitung utuh lewat `ringkasanKerja()`, dikunci uji di
+`uji/08-kemajuan-admin.uji.ts`.
+
+> **Pelajaran yang sama untuk kedua-duanya:** uji hijau bukan bukti benar.
+> Yang satu butuh uji terhadap data sungguhan, yang satu lagi butuh mata
+> melihat halamannya.
+
+### Catatan teknis yang mahal kalau lupa
+
+- **`npm run db:normalisasi` wajib diulang** setiap kali aturan di
+  `normalize.ts` berubah — kalau tidak, jalur "cocok persis" membandingkan
+  dengan bentuk baku yang basi.
+- **Sandi di `.env.local`, bukan `.env`** — `.env` dilacak git.
+- **`as const` pada klausa `include` Prisma merusak dua hal**: larik `OR` jadi
+  readonly (ditolak) *dan* inferensi tipe hasilnya hilang. Kunci hanya nilai
+  `"desc"`-nya.
+- **Satu `PrismaClient` untuk seluruh proses** — CLI sekarang memakai
+  `lib/db.ts`; dua koneksi ke satu berkas SQLite mengundang *database is locked*.
 
 ---
 

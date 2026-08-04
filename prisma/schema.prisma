@@ -35,6 +35,10 @@ model Product {
   id         String   @id @default(cuid())
   slug       String   @unique
   name       String
+  // Bentuk baku `name`: token diseragamkan lalu diurutkan (lib/normalize.ts).
+  // Membuat "mie goreng indomie" dan "indomie goreng" jadi nilai yang sama,
+  // sehingga pencarian tidak lagi bergantung pada urutan kata.
+  normalizedName String @default("")
   brand      String?
   unit       String   @default("1 pcs") // contoh: "1 L", "5 kg", "1 renceng"
   emoji      String   @default("📦")
@@ -43,9 +47,66 @@ model Product {
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
   prices     Price[]
+  aliases    ProductAlias[]
   createdAt  DateTime @default(now())
 
   @@index([categoryId])
+  @@index([normalizedName])
+}
+
+// Nama lain untuk produk yang sama — jalan keluar untuk kasus yang tak
+// tertangani algoritma pencocokan. Tanpa ini, setiap nama tak lazim dari toko
+// atau marketplace menuntut perubahan kode.
+//
+// Sekaligus dataset Fase 2: tiap alias yang diisi manual sekarang adalah label
+// buatan manusia untuk pelatihan pencocokan berbasis embedding nanti.
+model ProductAlias {
+  id              String   @id @default(cuid())
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  alias           String // nama apa adanya dari sumber
+  normalizedAlias String // hasil normalize(alias)
+  source          String? // asal alias: toko/marketplace mana
+  createdAt       DateTime @default(now())
+
+  @@unique([productId, normalizedAlias])
+  @@index([normalizedAlias])
+  @@index([productId])
+}
+
+// Kueri mentah pengguna + hasilnya.
+//
+// Satu tabel untuk dua keperluan yang sebenarnya sama: analitik pencarian
+// (kueri terpopuler, kueri yang GAGAL) dan bahan latih Fase 2. Kueri gagal
+// adalah isinya yang paling berharga — tiap baris dengan resultCount = 0
+// langsung jadi kandidat alias yang perlu ditambahkan.
+model SearchLog {
+  id          String   @id @default(cuid())
+  query       String // apa adanya yang diketik pengguna
+  normalized  String // hasil normalize(query)
+  resultCount Int
+  realOnly    Boolean  @default(false) // mode tampilan saat itu
+  jalur       String? // langkah mana yang menemukan: persis | alias | token | typo
+  createdAt   DateTime @default(now())
+
+  @@index([normalized])
+  @@index([resultCount, createdAt])
+  @@index([createdAt])
+}
+
+// Catatan kejadian yang TERSIMPAN — pengganti console.log yang hilang begitu
+// proses restart. Adapter yang mati diam-diam adalah kegagalan terburuk:
+// tampilan tetap normal sementara harga diam-diam basi.
+model EventLog {
+  id        String   @id @default(cuid())
+  level     String   @default("info") // info | warn | error
+  channel   String // scrape | refresh | admin | api | harga
+  message   String
+  detail    String? // JSON bebas, untuk konteks tambahan
+  createdAt DateTime @default(now())
+
+  @@index([channel, createdAt])
+  @@index([level, createdAt])
 }
 
 // Setiap baris = satu pengamatan harga (snapshot) sebuah produk di sebuah
@@ -59,7 +120,10 @@ model Price {
   price         Int // harga dalam Rupiah (tanpa desimal)
   inStock       Boolean     @default(true)
   url           String? // tautan ke halaman produk di toko (untuk hasil scraping)
-  source        String      @default("seed") // "seed" | "scrape" | "manual"
+  // Dari mana kita TAHU harga ini — bukan nama tokonya (itu `supermarket`).
+  // NYATA    : "open-prices" | "scrape" | "manual"
+  // PERKIRAAN: "seed" | "import-off"
+  source        String      @default("seed")
   recordedAt    DateTime    @default(now())
 
   @@index([productId, supermarketId, recordedAt])

@@ -15,6 +15,13 @@
  *  4) Simpan sebagai Price source="open-prices" (di-dedup per produk+toko+tanggal).
  */
 import type { PrismaClient } from "@prisma/client";
+import { cobaLagi, log } from "../lib/log";
+import {
+  catatKeRingkasan,
+  ringkasanKosong,
+  simpanHarga,
+  type RingkasanSimpan,
+} from "../lib/simpanHarga";
 
 const PRICES_API = "https://prices.openfoodfacts.org/api/v1/prices";
 const OFF_PRODUCT_API = "https://world.openfoodfacts.org/api/v2/product";
@@ -78,6 +85,8 @@ export type RefreshResult = {
   newProducts: number;
   inserted: number;
   skipped: number;
+  /** Ditolak validasi harga — dibedakan dari "dilewati", karena artinya beda. */
+  rejected: number;
   byStore: Record<string, number>;
 };
 
@@ -132,18 +141,31 @@ export async function refreshRealPrices(
     newProducts: 0,
     inserted: 0,
     skipped: 0,
+    rejected: 0,
     byStore: {},
   };
+  const ringkas: RingkasanSimpan = ringkasanKosong();
 
   for (let page = 1; page <= pages; page++) {
     let items: any[] = [];
     try {
       const url = `${PRICES_API}?currency=IDR&size=100&page=${page}&order_by=-date`;
-      const res = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/json" } });
-      if (!res.ok) break;
-      const data = (await res.json()) as any;
+      // Percobaan ulang berjeda menaik: kegagalan di sini paling sering sesaat
+      // (jaringan goyang), dan menyerah di percobaan pertama membuat "tidak ada
+      // harga baru" tak bisa dibedakan dari "gagal menghubungi".
+      const data = await cobaLagi(
+        async () => {
+          const res = await fetch(url, {
+            headers: { "User-Agent": UA, Accept: "application/json" },
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return (await res.json()) as any;
+        },
+        { label: `Open Prices halaman ${page}` }
+      );
       items = data.items ?? data.results ?? [];
     } catch {
+      // Sudah dicatat oleh cobaLagi(); berhenti menarik halaman berikutnya.
       break;
     }
     if (items.length === 0) break;
@@ -208,31 +230,37 @@ export async function refreshRealPrices(
         result.newProducts++;
       }
 
-      // 4) Simpan harga nyata (dedup per produk+toko+tanggal).
+      // 4) Simpan lewat pintu bersama: validasi harga & aturan dedup identik
+      //    dengan jalur scraper dan input manual.
       const recordedAt = new Date(`${it.date}T00:00:00.000Z`);
-      const exists = await prisma.price.findFirst({
-        where: { productId, supermarketId: storeId, source: "open-prices", recordedAt },
-        select: { id: true },
+      const hasil = await simpanHarga(prisma, {
+        productId,
+        supermarketId: storeId,
+        price,
+        inStock: true,
+        source: "open-prices",
+        url: `https://prices.openfoodfacts.org/app/products/${barcode}`,
+        recordedAt,
       });
-      if (exists) {
+      catatKeRingkasan(ringkas, hasil);
+
+      if (hasil.status === "disimpan" || hasil.status === "diperbarui") {
+        result.inserted++;
+        result.byStore[slug] = (result.byStore[slug] ?? 0) + 1;
+      } else if (hasil.status === "ditolak") {
+        result.rejected++;
+      } else {
         result.skipped++;
-        continue;
       }
-      await prisma.price.create({
-        data: {
-          productId,
-          supermarketId: storeId,
-          price,
-          inStock: true,
-          source: "open-prices",
-          url: `https://prices.openfoodfacts.org/app/products/${barcode}`,
-          recordedAt,
-        },
-      });
-      result.inserted++;
-      result.byStore[slug] = (result.byStore[slug] ?? 0) + 1;
     }
   }
+
+  await log.info("refresh", "Tarikan Open Prices selesai", {
+    diperiksa: result.fetched,
+    cocokToko: result.matchedStore,
+    produkBaru: result.newProducts,
+    ...ringkas,
+  });
 
   return result;
 }

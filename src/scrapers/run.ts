@@ -3,10 +3,11 @@
  * Jalankan: npm run scrape
  * (Versi tombol di UI memakai /api/scrape dengan logika yang sama.)
  */
-import { PrismaClient } from "@prisma/client";
+// Memakai klien bersama, bukan `new PrismaClient()`: pencatatan log menulis
+// lewat klien yang sama, dan dua koneksi ke satu berkas SQLite mengundang
+// "database is locked".
+import { prisma } from "../lib/db";
 import { runScrapers } from "../data/runScrapers";
-
-const prisma = new PrismaClient();
 
 async function main() {
   console.log("🔎 Menjalankan scraper aktif...");
@@ -15,7 +16,8 @@ async function main() {
   console.log(`  Adapter dijalankan : ${r.ran.join(", ") || "(tidak ada aktif)"}`);
   if (r.failed.length) console.log(`  Adapter gagal      : ${r.failed.join(", ")}`);
   console.log(`  Harga disimpan     : ${r.inserted}`);
-  console.log(`  Dilewati           : ${r.skipped}`);
+  console.log(`  Dilewati (duplikat): ${r.skipped}`);
+  console.log(`  Ditolak validasi   : ${r.rejected}`);
   if (Object.keys(r.byStore).length) console.log("  Per toko:", r.byStore);
   if (r.inserted === 0) {
     console.log(

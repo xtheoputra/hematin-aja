@@ -1,6 +1,12 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { getCategories, getProducts, getHomeStats } from "@/lib/queries";
+import {
+  getCategories,
+  getDaftarProduk,
+  getHomeStats,
+  MAKS_PER_HALAMAN,
+  PRODUK_PER_HALAMAN,
+} from "@/lib/queries";
 import { getDisplayMode, isRealOnly } from "@/lib/mode";
 import ProductCard from "@/components/ProductCard";
 import SearchControls from "@/components/SearchControls";
@@ -14,26 +20,38 @@ export const dynamic = "force-dynamic";
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: { q?: string; kategori?: string };
+  searchParams: { q?: string; kategori?: string; tampil?: string };
 }) {
   const search = searchParams.q?.trim() || undefined;
   const category = searchParams.kategori || undefined;
   const mode = getDisplayMode();
   const realOnly = isRealOnly(mode);
 
-  const [categories, products, stats] = await Promise.all([
+  // Berapa yang ditampilkan bertambah lewat URL, bukan dengan menarik seluruh
+  // tabel produk sekaligus.
+  const tampil = Math.min(
+    Math.max(PRODUK_PER_HALAMAN, Number(searchParams.tampil) || PRODUK_PER_HALAMAN),
+    MAKS_PER_HALAMAN
+  );
+
+  const [categories, daftar, stats] = await Promise.all([
     getCategories(),
-    getProducts({ search, category, realOnly }),
+    getDaftarProduk({ search, category, realOnly, limit: tampil }),
     getHomeStats(realOnly),
   ]);
 
   // Tampilkan yang ada harganya lebih dulu (relevan di mode "Hanya Nyata").
-  const sorted = [...products].sort(
+  const sorted = [...daftar.items].sort(
     (a, b) => Number(b.available) - Number(a.available)
   );
 
   const isFiltering = Boolean(search || category);
   const activeCategory = categories.find((c) => c.slug === category);
+  const adaLagi = daftar.total > sorted.length;
+  const paramLagi = new URLSearchParams();
+  if (search) paramLagi.set("q", search);
+  if (category) paramLagi.set("kategori", category);
+  paramLagi.set("tampil", String(Math.min(tampil * 2, MAKS_PER_HALAMAN)));
 
   return (
     <main>
@@ -109,7 +127,9 @@ export default async function HomePage({
               : "Produk populer"}
           </h2>
           <p className="text-xs font-medium text-ink-400 md:text-sm">
-            {sorted.length} produk
+            {sorted.length < daftar.total
+              ? `${sorted.length} dari ${daftar.total} produk`
+              : `${daftar.total} produk`}
           </p>
         </div>
 
@@ -124,19 +144,56 @@ export default async function HomePage({
             <p className="mt-1 text-xs text-ink-400">
               Coba kata kunci lain atau pilih kategori berbeda.
             </p>
+            {daftar.saran.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs text-ink-400">Maksud Anda…</p>
+                <div className="mt-2 flex flex-wrap justify-center gap-2">
+                  {daftar.saran.map((s) => (
+                    <Link
+                      key={s.slug}
+                      href={`/?q=${encodeURIComponent(s.name)}`}
+                      className="rounded-full border border-brand-200 bg-brand-50/60 px-3 py-1.5 text-xs font-semibold text-brand-700 transition hover:border-brand-300 dark:border-brand-800 dark:bg-brand-900/20 dark:text-brand-300"
+                    >
+                      {s.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {sorted.map((p, i) => (
-              <div
-                key={p.id}
-                className="animate-fade-up"
-                style={{ animationDelay: `${Math.min(i, 8) * 35}ms` }}
-              >
-                <ProductCard p={p} />
+          <>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {sorted.map((p, i) => (
+                <div
+                  key={p.id}
+                  className="animate-fade-up"
+                  style={{ animationDelay: `${Math.min(i, 8) * 35}ms` }}
+                >
+                  <ProductCard p={p} />
+                </div>
+              ))}
+            </div>
+
+            {adaLagi && (
+              <div className="flex justify-center pt-2">
+                {tampil < MAKS_PER_HALAMAN ? (
+                  <Link
+                    href={`/?${paramLagi.toString()}`}
+                    scroll={false}
+                    className="rounded-2xl border border-ink-200 bg-white px-5 py-2.5 text-sm font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-300"
+                  >
+                    Tampilkan lebih banyak
+                  </Link>
+                ) : (
+                  <p className="text-xs text-ink-400">
+                    Menampilkan {MAKS_PER_HALAMAN} teratas — persempit dengan
+                    pencarian atau kategori untuk melihat sisanya.
+                  </p>
+                )}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </main>

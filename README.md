@@ -37,6 +37,20 @@ lengkap dengan **insight** & rekomendasi hemat.
 - 🧺 **Keranjang pintar**: hitung total belanja di tiap toko → toko paling hemat
 - 💡 **Insight**: toko paling sering termurah, harga lagi turun, rekomendasi hemat
 - 📱 **PWA**: bisa di-install di HP & punya cache offline
+- 🔐 **Halaman admin** (`/admin`): input harga nyata manual, produk baru, alias,
+  daftar kerja pengisian data, kueri yang gagal, dan catatan kejadian
+
+### Pencarian yang tidak bergantung urutan kata
+
+Nama produk dibawa ke **bentuk baku** (token diseragamkan lalu diurutkan), jadi
+`"mie goreng indomie"`, `"indomie mi goreng"`, dan `"INDOMIE GORENG"` sama-sama
+menemukan Indomie Goreng. Pencocokannya bertingkat — persis → alias → token →
+toleransi salah ketik — dan berhenti di tingkat pertama yang berhasil.
+
+Dua hal **tidak pernah** dilonggarkan: **merek** dan **ukuran**. `Aqua 600ml`
+bukan `Aqua 19L`, dan `Indomie Goreng` bukan `Mie Sedaap Goreng`. Salah cocok
+berarti menampilkan harga barang lain sebagai "lebih murah" — lebih merugikan
+daripada tidak ketemu sama sekali.
 
 ## 🧱 Teknologi
 
@@ -72,13 +86,52 @@ npm run dev          # jalankan di http://localhost:3000
 Skrip lain:
 
 ```bash
+npm test             # 166 pemeriksaan, ±1 detik — pakai ini, jangan verifikasi manual
 npm run db:seed      # isi ulang data contoh
 npm run db:reset     # reset DB + seed ulang
 npm run db:studio    # buka Prisma Studio (lihat/ubah data)
+npm run db:normalisasi # isi ulang Product.normalizedName + alias dari slug
+npm run db:statistik # berapa produk, berapa harga, berapa yang NYATA
+npm run ukur         # ukur biaya kueri harga (sebelum vs sesudah pembatasan)
 npm run import:off    # impor produk Indonesia ASLI dari Open Food Facts (mis. `npm run import:off -- 40`)
 npm run scrape       # jalankan scraper aktif (lihat di bawah)
 npm run build        # build produksi
 ```
+
+> `npm run db:normalisasi` **wajib** dijalankan ulang setiap kali aturan di
+> `src/lib/normalize.ts` berubah. Kalau tidak, pencarian "cocok persis"
+> membandingkan dengan bentuk baku yang sudah basi.
+
+### 🔐 Mengaktifkan halaman admin
+
+Halaman `/admin` dan rute `POST /api/refresh` & `POST /api/scrape` **mati total**
+sampai sandinya disetel — bawaan yang aman adalah tertutup, bukan terbuka.
+
+Buat berkas **`.env.local`** (bukan `.env` — `.env` ikut ter-commit):
+
+```
+ADMIN_PASSWORD="sandi-pilihan-anda"
+```
+
+lalu jalankan ulang server. Untuk skrip/penjadwal yang tidak punya sesi, sandi
+bisa dikirim lewat header `x-hematin-sandi`.
+
+Kenapa refresh & scrape ikut dikunci: keduanya **memicu permintaan keluar ke
+situs pihak ketiga**. Kalau dibiarkan terbuka, siapa pun yang tahu alamatnya
+bisa memakai aplikasi ini untuk membanjiri Klik Indomaret atau Open Prices atas
+nama pemiliknya.
+
+### ⏰ Pembaruan harga terjadwal (Windows)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File jadwalkan.ps1            # harian 07:00
+powershell -ExecutionPolicy Bypass -File jadwalkan.ps1 -Jam 19:30
+powershell -ExecutionPolicy Bypass -File jadwalkan.ps1 -Hapus
+```
+
+Memakai Task Scheduler, bukan `setInterval` di dalam Next.js: penjadwalan di
+dalam proses aplikasi ikut mati begitu prosesnya restart. Hasil & kegagalan tiap
+jalan tercatat ke tabel `EventLog`, bisa dibaca di `/admin`.
 
 ## 🕷️ Scraper (mengisi harga dari toko sungguhan)
 
@@ -102,7 +155,8 @@ Untuk menambah toko sungguhan, lihat **`src/scrapers/README.md`** dan template
 
 ```
 prisma/
-  schema.prisma        # model: Supermarket, Category, Product, Price (history)
+  schema.prisma        # Supermarket, Category, Product, Price (history),
+                       # ProductAlias, SearchLog, EventLog
   seed.ts              # data contoh + riwayat harga
 src/
   app/
@@ -110,10 +164,23 @@ src/
     produk/[slug]/     # detail produk: harga per toko + grafik tren
     keranjang/         # banding total belanja → toko termurah
     insight/           # insight & rekomendasi hemat
-    api/               # /products, /insights, /compare
+    admin/             # 🔐 input harga nyata, produk, alias + daftar kerja
+    api/               # /products, /insights, /compare, /admin/*
   components/          # UI: kartu produk, grafik, navigasi, keranjang
-  lib/                 # db, query, format, tipe
+  lib/
+    normalize.ts       # normalisasi & pencocokan nama (MURNI, tanpa DB)
+    harga.ts           # validasi harga (MURNI, tanpa DB)
+    simpanHarga.ts     # satu-satunya pintu penulisan harga
+    cache.ts           # cache lapisan data — kunci WAJIB memuat realOnly
+    log.ts             # catatan kejadian tersimpan + percobaan ulang
+    admin.ts           # sandi & pembatas laju (MURNI, tanpa next/headers)
+    queries/
+      pilih.ts         #   aturan "mana yang termurah" (MURNI, tanpa DB)
+      muat.ts          #   pemuatan harga secukupnya
+      cari.ts          #   alur pencarian bertingkat
+      produk.ts toko.ts banding.ts insight.ts
   scrapers/            # framework scraper + adapter per toko
+uji/                   # `npm test` — kerangka sendiri, tanpa dependensi baru
 public/                # manifest, service worker, ikon (PWA)
 ```
 

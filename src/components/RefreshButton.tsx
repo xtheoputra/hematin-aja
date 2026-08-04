@@ -18,17 +18,29 @@ export default function RefreshButton({ light = false }: { light?: boolean }) {
     setMsg(null);
     try {
       // Tarik dari kedua sumber harga NYATA sekaligus: Open Prices + scraper toko.
+      const ambil = async (url: string) => {
+        const r = await fetch(url, { method: "POST" });
+        return { kode: r.status, isi: await r.json().catch(() => ({})) };
+      };
       const settled = await Promise.allSettled([
-        fetch("/api/refresh", { method: "POST" }).then((r) => r.json()),
-        fetch("/api/scrape", { method: "POST" }).then((r) => r.json()),
+        ambil("/api/refresh"),
+        ambil("/api/scrape"),
       ]);
+
+      // Kedua rute ini menembak situs pihak ketiga, jadi sekarang bersandi.
+      // Pengunjung biasa perlu tahu itu batasan yang disengaja, bukan kerusakan.
+      if (settled.some((s) => s.status === "fulfilled" && s.value.kode === 401)) {
+        setMsg("Perlu masuk admin dulu — buka /admin");
+        return;
+      }
+
       const inserted = settled.reduce(
         (sum, s) =>
-          sum + (s.status === "fulfilled" && s.value?.ok ? s.value.inserted ?? 0 : 0),
+          sum + (s.status === "fulfilled" && s.value.isi?.ok ? s.value.isi.inserted ?? 0 : 0),
         0
       );
       const allFailed = settled.every(
-        (s) => s.status === "rejected" || !s.value?.ok
+        (s) => s.status === "rejected" || !s.value.isi?.ok
       );
       if (allFailed) {
         setMsg("Gagal memperbarui");

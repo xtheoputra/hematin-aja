@@ -73,25 +73,25 @@ gangguan bagi situs orang lain**, yang juga jadi sikap etis di README.
 | Tolak harga tak masuk akal (Indomie = 100.000) | ❌ belum |
 | Rentang wajar per kategori | ❌ belum |
 
-- [ ] Tolak harga menyimpang ekstrem dari **median historis** produk itu
+- [x] Tolak harga menyimpang ekstrem dari **median historis** produk itu
       (mis. di luar 0,25×–4× median) — lebih tahan banting daripada rentang tetap
-- [ ] Kalau belum ada riwayat, pakai rentang per kategori sebagai jaring pengaman
-- [ ] Harga yang ditolak **dicatat**, jangan dibuang diam-diam — itu sinyal
+- [x] Kalau belum ada riwayat, pakai rentang per kategori sebagai jaring pengaman
+- [x] Harga yang ditolak **dicatat**, jangan dibuang diam-diam — itu sinyal
       parser rusak
 
 ### 1.2 Cegah harga ganda
 
 - [x] **Sudah ada** — `runScrapers.ts`: satu harga per (produk × toko × sumber)
       per hari
-- [ ] Terapkan aturan yang sama pada **input manual** & jalur `api/refresh`
-- [ ] Kalau harga sama persis dengan catatan terakhir, cukup perbarui
+- [x] Terapkan aturan yang sama pada **input manual** & jalur `api/refresh`
+- [x] Kalau harga sama persis dengan catatan terakhir, cukup perbarui
       `recordedAt` — jangan tumpuk baris identik
 
 ### 1.3 Kendali waktu
 
 - [x] Semua harga punya `recordedAt` — **sudah ada**
 - [ ] Tandai **"kedaluwarsa"** bila > 7 hari
-- [ ] Tampilkan umur data di UI ("dicek 3 hari lalu")
+- [x] Tampilkan umur data di UI ("dicek 3 hari lalu")
 
 > ⚠️ **Catatan penting.** Harga terakhir tercatat **24 Juni 2026** — sudah
 > **34 hari**. Kalau tanda "kedaluwarsa" dipasang hari ini, **100% data akan
@@ -104,10 +104,10 @@ gangguan bagi situs orang lain**, yang juga jadi sikap etis di README.
 
 ### 2.1 Batasi kueri — **kerjakan duluan** 🔴
 
-- [ ] Beri `take` pada `priceInclude` — cukup **harga terbaru per toko**, bukan
+- [x] Beri `take` pada `priceInclude` — cukup **harga terbaru per toko**, bukan
       seluruh riwayat
-- [ ] Riwayat lengkap hanya diambil di halaman detail produk (untuk grafik tren)
-- [ ] Ukur sebelum & sesudah, catat angkanya
+- [x] Riwayat lengkap hanya diambil di halaman detail produk (untuk grafik tren)
+- [x] Ukur sebelum & sesudah, catat angkanya
 
 ### 2.2 Indeks
 
@@ -120,17 +120,17 @@ gangguan bagi situs orang lain**, yang juga jadi sikap etis di README.
 
 ### 2.3 Caching
 
-- [ ] Cache di **lapisan data**, bukan halaman (lihat Temuan 2)
-- [ ] Kunci cache **wajib memuat `realOnly`**
-- [ ] TTL: pencarian **10 menit**, daftar harga **5 menit**
-- [ ] Batalkan cache begitu Refresh/scrape memasukkan harga baru
-- [ ] Redis **belum perlu** — cache dalam proses sudah cukup untuk skala ini
+- [x] Cache di **lapisan data**, bukan halaman (lihat Temuan 2)
+- [x] Kunci cache **wajib memuat `realOnly`**
+- [x] TTL: pencarian **10 menit**, daftar harga **5 menit**
+- [x] Batalkan cache begitu Refresh/scrape memasukkan harga baru
+- [x] Redis **belum perlu** — cache dalam proses sudah cukup untuk skala ini
 
 ### 2.4 Paginasi
 
-- [ ] Batasi hasil pencarian (10–20 item)
-- [ ] Halaman `/bandingkan` sudah membatasi 50 — samakan polanya
-- [ ] Jangan pernah memuat seluruh tabel produk sekaligus
+- [x] Batasi hasil pencarian (10–20 item)
+- [x] Halaman `/bandingkan` sudah membatasi 50 — samakan polanya
+- [x] Jangan pernah memuat seluruh tabel produk sekaligus
 
 ---
 
@@ -166,12 +166,12 @@ lib/queries.ts       → logika + akses DB   ← 640 baris, campur aduk
 lib/db.ts            → klien Prisma
 ```
 
-- [ ] Pecah `queries.ts` per modul: `product.ts`, `price.ts`, `search.ts`
-- [ ] Pisahkan **logika** (menentukan termurah, skor) dari **akses DB** — supaya
+- [x] Pecah `queries.ts` per modul: `product.ts`, `price.ts`, `search.ts`
+- [x] Pisahkan **logika** (menentukan termurah, skor) dari **akses DB** — supaya
       logikanya bisa diuji tanpa database
-- [ ] Bentuk balasan error yang seragam:
+- [x] Bentuk balasan error yang seragam:
       `{ success: false, message: "..." }`
-- [ ] Jangan bocorkan pesan error mentah ke pengguna (`api/scrape` sekarang
+- [x] Jangan bocorkan pesan error mentah ke pengguna (`api/scrape` sekarang
       mengembalikan `e.message` apa adanya)
 
 > 💬 **Catatan jujur.** Pola Controller/Service/Repository lengkap **berlebihan**
@@ -187,17 +187,17 @@ lib/db.ts            → klien Prisma
 Sekarang: `npm run scrape` manual + tombol Refresh. Tidak ada penjadwalan,
 tidak ada percobaan ulang, tidak ada log.
 
-- [ ] **Penjadwalan** — perbarui harga tiap X jam
+- [x] **Penjadwalan** — perbarui harga tiap X jam
   - Di PC Windows: **Task Scheduler** memanggil `npm run scrape`
   - Bila kelak di-*hosting*: cron platform
   - `setInterval` di dalam Next.js **bukan** solusi — mati saat proses restart
-- [ ] **Percobaan ulang** 2–3 kali dengan jeda menaik saat gagal ambil
-- [ ] **Pencatatan log**:
-  - [ ] scraper berhasil/gagal, berapa baris masuk
-  - [ ] error API
-  - [ ] kegagalan pencocokan
-  - [ ] harga ditolak validasi (§1.1)
-- [ ] Log tersimpan (berkas/tabel), bukan cuma `console.log` yang hilang
+- [x] **Percobaan ulang** 2–3 kali dengan jeda menaik saat gagal ambil
+- [x] **Pencatatan log**:
+  - [x] scraper berhasil/gagal, berapa baris masuk
+  - [x] error API
+  - [x] kegagalan pencocokan
+  - [x] harga ditolak validasi (§1.1)
+- [x] Log tersimpan (berkas/tabel), bukan cuma `console.log` yang hilang
 
 > Adapter yang **mati diam-diam** adalah kegagalan terburuk: tampilan tetap
 > normal, harga diam-diam basi. Log yang bisa dibaca ulang adalah satu-satunya
@@ -207,9 +207,9 @@ tidak ada percobaan ulang, tidak ada log.
 
 ## 6. 📊 Analitik
 
-- [ ] Tabel `SearchLog`: kueri, jumlah hasil, produk yang diklik, waktu
+- [x] Tabel `SearchLog`: kueri, jumlah hasil, produk yang diklik, waktu
 - [ ] Produk paling sering dicari
-- [ ] **Kueri yang gagal** — ini paling berharga: langsung jadi daftar alias
+- [x] **Kueri yang gagal** — ini paling berharga: langsung jadi daftar alias
       yang perlu ditambahkan
 - [ ] Jumlah pencarian harian
 - [ ] Klik ke tautan toko
@@ -232,9 +232,9 @@ tidak ada percobaan ulang, tidak ada log.
 
 Sisa kerja:
 
-- [ ] Saran saat pencarian nihil ("maksud Anda…?") — pakai kueri gagal dari §6
+- [x] Saran saat pencarian nihil ("maksud Anda…?") — pakai kueri gagal dari §6
 - [ ] Saat harga kosong, tampilkan **data lama + umurnya**, jangan kosong total
-- [ ] Urutkan varian ambigu berdasarkan ukuran, bukan abjad
+- [x] Urutkan varian ambigu berdasarkan ukuran, bukan abjad
 
 ---
 
@@ -251,16 +251,16 @@ Sisa kerja:
 
 Yang **benar-benar** perlu:
 
-- [ ] Validasi bentuk & batas masukan (panjang kueri, tipe, rentang angka)
-- [ ] Escape saat **menampilkan** — React sudah otomatis; jangan pakai
+- [x] Validasi bentuk & batas masukan (panjang kueri, tipe, rentang angka)
+- [x] Escape saat **menampilkan** — React sudah otomatis; jangan pakai
       `dangerouslySetInnerHTML`
 
 ### 8.2 Pembatasan laju & akses
 
-- [ ] 🔴 **Lindungi `POST /api/refresh` & `POST /api/scrape`** (Temuan 3)
-- [ ] Rate limit per IP untuk pencarian
-- [ ] Rute admin (Fase 1 §4) wajib bersandi
-- [ ] Jangan kembalikan pesan error internal ke publik
+- [x] 🔴 **Lindungi `POST /api/refresh` & `POST /api/scrape`** (Temuan 3)
+- [x] Rate limit per IP untuk pencarian
+- [x] Rute admin (Fase 1 §4) wajib bersandi
+- [x] Jangan kembalikan pesan error internal ke publik
 
 ---
 
@@ -273,15 +273,15 @@ Yang **benar-benar** perlu:
 | Penanda "Termurah" | ✅ ada di `CompareTable` & `CartView` |
 | Saran otomatis saat mengetik | ❌ opsional |
 
-- [ ] Tambahkan **umur data** di kartu harga ("dicek 3 hari lalu")
+- [x] Tambahkan **umur data** di kartu harga ("dicek 3 hari lalu")
 - [ ] Saran otomatis *(opsional, kerjakan terakhir)*
 
 ---
 
 ## 10. 🚀 Persiapan Fase 2 (siap-AI)
 
-- [ ] Simpan **kueri mentah pengguna** + hasil pencocokan (tabel §6)
-- [ ] Kumpulkan **alias produk** & variasi nama — tabel `ProductAlias` dari
+- [x] Simpan **kueri mentah pengguna** + hasil pencocokan (tabel §6)
+- [x] Kumpulkan **alias produk** & variasi nama — tabel `ProductAlias` dari
       Fase 1 **sudah menjadi dataset itu sendiri**
 - [ ] Tandai pencocokan yang dikoreksi manusia → ini label emas untuk pelatihan
 
@@ -308,22 +308,22 @@ di Fase 1 & 1.5.
 
 ## 12. 🎯 Checklist Akhir Sebelum Fase 2
 
-- [ ] Pencarian stabil
-- [ ] Pencocokan akurat **≥ 80%** — *lihat cara ukur di bawah*
+- [x] Pencarian stabil
+- [x] Pencocokan akurat **≥ 80%** — *lihat cara ukur di bawah*
 - [ ] Harga konsisten
-- [ ] API cepat
+- [x] API cepat
 - [ ] Data tidak kacau
-- [ ] Ada pencatatan log
+- [x] Ada pencatatan log
 
 ### Cara mengukur "≥ 80%" supaya bukan sekadar klaim
 
 Angka akurasi tanpa cara ukur cuma hiasan. Yang bisa dibuktikan:
 
-- [ ] Susun **himpunan uji berlabel**: 50 pasang `kueri → produk yang benar`
+- [x] Susun **himpunan uji berlabel**: 50 pasang `kueri → produk yang benar`
   - ambil dari kueri gagal nyata (§6), bukan karangan sendiri
   - sertakan kasus sulit: urutan kata terbalik, salah ketik, merek mirip,
     ukuran berbeda
-- [ ] Ukur dua angka **terpisah** — keduanya wajib dilaporkan:
+- [x] Ukur dua angka **terpisah** — keduanya wajib dilaporkan:
 
 | Angka | Arti | Target |
 | --- | --- | --- |
@@ -334,7 +334,7 @@ Angka akurasi tanpa cara ukur cuma hiasan. Yang bisa dibuktikan:
 > mengecewakan; salah ketemu itu **menyesatkan orang saat belanja**. Sistem
 > yang mencocokkan segalanya bisa mencetak recall 100% dan tetap tak berguna.
 
-- [ ] Jalankan himpunan uji ini di `npm test` — jadi angkanya terpantau tiap
+- [x] Jalankan himpunan uji ini di `npm test` — jadi angkanya terpantau tiap
       perubahan, bukan diukur sekali lalu dilupakan
 
 ---

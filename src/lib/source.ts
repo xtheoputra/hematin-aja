@@ -15,12 +15,21 @@ export type SourceMeta = {
   /** keterangan panjang untuk tooltip */
   label: string;
   /** kanal spesifik untuk harga nyata */
-  channel?: "open-prices" | "scrape";
+  channel?: "open-prices" | "scrape" | "manual";
 };
+
+/**
+ * Sumber yang dianggap NYATA. `manual` masuk ke sini karena harga yang
+ * diketik manusia setelah melihat rak toko atau struk **adalah** pengamatan
+ * nyata — justru lebih dapat dipertanggungjawabkan daripada hasil scraping.
+ * Kalau lupa didaftarkan di sini, harga yang Anda isi sendiri lewat /admin
+ * akan tampil ke pengguna sebagai "Perkiraan".
+ */
+const SUMBER_NYATA = new Set(["open-prices", "scrape", "manual"]);
 
 export function sourceKindOf(source: string | null | undefined): SourceKind {
   if (!source) return "none";
-  if (source === "open-prices" || source === "scrape") return "real";
+  if (SUMBER_NYATA.has(source)) return "real";
   return "estimate"; // seed | import-off | lainnya
 }
 
@@ -42,6 +51,13 @@ export function sourceMeta(source: string | null | undefined): SourceMeta {
         channel: "scrape",
         badge: "Nyata · Toko",
         label: "Harga nyata hasil cek langsung situs toko",
+      };
+    case "manual":
+      return {
+        kind: "real",
+        channel: "manual",
+        badge: "Nyata · Dicek",
+        label: "Harga nyata yang dicatat manual setelah dilihat langsung di toko atau struk",
       };
     case null:
     case undefined:

@@ -8,14 +8,18 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "tsx uji/jalankan.ts",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts",
     "db:studio": "prisma studio",
+    "db:normalisasi": "tsx src/data/isiNormalizedName.ts",
+    "db:statistik": "tsx src/data/statistik.ts",
     "scrape": "tsx src/scrapers/run.ts",
     "import:off": "tsx src/data/importOpenFoodFacts.ts",
     "refresh": "tsx src/data/refreshPrices.ts",
-    "setup": "prisma db push && tsx prisma/seed.ts"
+    "setup": "prisma db push && tsx prisma/seed.ts",
+    "ukur": "tsx src/data/ukurKueri.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

@@ -1,7 +1,24 @@
 # ✅ Fase 1 — Checklist Eksekusi MVP Inti
 
 Daftar kerja yang bisa langsung dieksekusi, dengan **status nyata** terhadap
-kode hari ini (commit `12fe7dc`).
+kode hari ini.
+
+> ## 📍 Status per 4 Agustus 2026
+>
+> **Seluruh pekerjaan KODE Fase 1 selesai.** Yang tersisa murni **pekerjaan
+> data**: mengisi harga nyata lewat `/admin`.
+>
+> | | |
+> | --- | --- |
+> | Normalisasi + pencocokan token | ✅ `src/lib/normalize.ts` |
+> | `Product.normalizedName` + `ProductAlias` | ✅ terpasang, 45 alias dari slug |
+> | Alur pencarian bertingkat | ✅ persis → alias → token → typo |
+> | Halaman `/admin` bersandi + 3 rute admin | ✅ |
+> | `npm test` | ✅ **166 pemeriksaan, ±1 detik** |
+> | Presisi / recall terukur | ✅ **98,1% / 100%** (target 95% / 80%) |
+> | Harga nyata | 🔴 **11 baris, 10 produk** — target ≥ 75 |
+>
+> Ukur ulang kapan saja: `npm run db:statistik`.
 
 > **Sasaran Fase 1:** pengguna bisa cari produk → melihat harga termurah dari
 > **≥ 2 sumber nyata**, dengan pencocokan yang tidak kacau, **tanpa AI**.
@@ -25,30 +42,34 @@ yang diminta. Jangan bangun ulang.
 | API cari produk | ✅ **ada** | `GET /api/products?q=…&kategori=…` |
 | Harga urut termurah | ✅ **ada** | `getProductDetail` + `compareCart` sudah mengurutkan menaik |
 | Sortir & banding antar sumber | ✅ **ada** | halaman `/bandingkan` + `POST /api/compare` |
-| **Kolom `normalized_name`** | ❌ **belum** | — |
-| **Tabel Product Alias** | ❌ **belum** | **inti kekurangan Fase 1** |
-| **Fungsi normalisasi** | ❌ **belum** | pencarian masih `contains` mentah pada `name`/`brand` |
-| **Form input admin** | ❌ **belum** | belum ada halaman admin sama sekali |
-| Uji otomatis | ❌ **belum** | belum ada `npm test` |
+| **Kolom `normalized_name`** | ✅ **ada** | `Product.normalizedName` + indeks |
+| **Tabel Product Alias** | ✅ **ada** | `ProductAlias`, unik per (produk, alias) |
+| **Fungsi normalisasi** | ✅ **ada** | `src/lib/normalize.ts` — murni, tanpa DB |
+| **Form input admin** | ✅ **ada** | `/admin` bersandi + 3 rute `POST /api/admin/*` |
+| Uji otomatis | ✅ **ada** | `npm test` — 166 pemeriksaan, tanpa dependensi baru |
 
-### 🔬 Bukti kekurangannya
+### 🔬 Bukti kekurangannya — **sudah teratasi**
 
-`src/lib/queries.ts` → `getProducts()` menjalankan:
+Yang lama, `getProducts()` menjalankan:
 
 ```ts
 OR: [ { name: { contains: search } }, { brand: { contains: search } } ]
 ```
 
-Konsekuensinya, persis seperti dugaan checklist:
+| Masukan | Dulu | Sekarang |
+| --- | --- | --- |
+| `indomie goreng` | ✅ ketemu | ✅ ketemu (jalur *persis*) |
+| `mie goreng indomie` | ❌ tidak ketemu | ✅ **ketemu** (jalur *token*) |
+| `indomie mi goreng` | ❌ tidak ketemu | ✅ **ketemu** (sinonim `mi`→`mie`) |
 
-| Masukan | Hasil sekarang |
-| --- | --- |
-| `indomie goreng` | ✅ ketemu |
-| `mie goreng indomie` | ❌ **tidak ketemu** — urutan kata berbeda |
-| `indomie mi goreng` | ❌ **tidak ketemu** |
+Ketiganya terkunci sebagai uji — di `uji/01-normalisasi.uji.ts` (logika murni)
+**dan** `uji/07-pencarian-nyata.uji.ts` (terhadap database sungguhan).
 
-**Jadi kerja Fase 1 yang sesungguhnya = normalisasi + alias + admin input.**
-Sisanya sudah berdiri.
+> ⚠️ Satu jebakan yang sempat menggigit: `"mie"` adalah token merek yang sah
+> (dari **Mie** Sedaap), jadi gerbang merek sempat menggugurkan
+> `"mie goreng indomie"` sebagai "merek berbeda". Kata kategori sekarang
+> dikecualikan dari gerbang merek. Uji murni lolos, uji terhadap data
+> sungguhan yang menangkapnya.
 
 ---
 
@@ -177,10 +198,10 @@ model ProductAlias {
 Alias adalah **jalan keluar** untuk kasus yang tak tertangani algoritma —
 tanpa ini, setiap nama tak lazim butuh perubahan kode.
 
-- [ ] Tambah `normalizedName` ke `Product`
-- [ ] Tambah model `ProductAlias`
-- [ ] `npx prisma db push`
-- [ ] Skrip pengisi ulang: hitung `normalizedName` untuk 100 produk yang ada
+- [x] Tambah `normalizedName` ke `Product`
+- [x] Tambah model `ProductAlias`
+- [x] `npx prisma db push`
+- [x] Skrip pengisi ulang: hitung `normalizedName` untuk 100 produk yang ada
 
 ---
 
@@ -188,25 +209,25 @@ tanpa ini, setiap nama tak lazim butuh perubahan kode.
 
 ### 3.1 `src/lib/normalize.ts` — berkas baru
 
-- [ ] `normalize(teks): string` — sesuai langkah §1.1
-- [ ] `tokenize(teks): string[]`
-- [ ] `KATA_KATEGORI` — daftar token opsional
-- [ ] `cocok(kueri, produk): { cocok: boolean; skor: number }` — keterkandungan token
-- [ ] Gerbang merek & ukuran (§1.3)
+- [x] `normalize(teks): string` — sesuai langkah §1.1
+- [x] `tokenize(teks): string[]`
+- [x] `KATA_KATEGORI` — daftar token opsional
+- [x] `cocok(kueri, produk): { cocok: boolean; skor: number }` — keterkandungan token
+- [x] Gerbang merek & ukuran (§1.3)
 
 ### 3.2 Alur pencarian
 
-- [ ] Masukan pengguna → `normalize()`
-- [ ] Cari **persis** di `Product.normalizedName`
-- [ ] Bila kosong → cari di `ProductAlias.normalizedAlias`
+- [x] Masukan pengguna → `normalize()`
+- [x] Cari **persis** di `Product.normalizedName`
+- [x] Bila kosong → cari di `ProductAlias.normalizedAlias`
 - [ ] Bila masih kosong → keterkandungan token
-- [ ] Bila masih kosong → *(opsional)* fuzzy toleransi salah ketik ringan
-- [ ] Kembalikan terurut berdasarkan skor
+- [x] Bila masih kosong → *(opsional)* fuzzy toleransi salah ketik ringan
+- [x] Kembalikan terurut berdasarkan skor
 
 ### 3.3 Pengurutan harga
 
 - [x] Ambil semua harga, urutkan menaik — **sudah ada**
-- [ ] Pastikan urutan tetap benar saat mode **Hanya Nyata** aktif
+- [x] Pastikan urutan tetap benar saat mode **Hanya Nyata** aktif
 
 ---
 
@@ -220,18 +241,18 @@ tanpa ini, setiap nama tak lazim butuh perubahan kode.
 | `POST /api/admin/prices` | ❌ | tambah harga manual (`source = "manual"`) |
 | `POST /api/admin/aliases` | ❌ | tambah alias |
 
-- [ ] Semua rute admin **wajib berpelindung sandi** — jangan biarkan terbuka
-- [ ] Validasi masukan: harga > 0, produk & toko wajib ada
+- [x] Semua rute admin **wajib berpelindung sandi** — jangan biarkan terbuka
+- [x] Validasi masukan: harga > 0, produk & toko wajib ada
 
 ---
 
 ## 5. 🖥️ Halaman Admin
 
-- [ ] `/admin` — terlindung sandi
-- [ ] Form tambah/sunting produk
-- [ ] Form **input harga manual** (produk × toko × harga × tanggal)
-- [ ] Form tambah alias
-- [ ] Tabel produk tanpa harga nyata → daftar kerja yang kelihatan
+- [x] `/admin` — terlindung sandi
+- [x] Form tambah/sunting produk
+- [x] Form **input harga manual** (produk × toko × harga × tanggal)
+- [x] Form tambah alias
+- [x] Tabel produk tanpa harga nyata → daftar kerja yang kelihatan
 
 ---
 
@@ -257,9 +278,9 @@ Perubahan sikap dari sesi sebelumnya — dan **saya setuju**: scraper
 `klikindomaret` belum terbukti dan diduga terkunci geo-restriction. Input manual
 menghasilkan harga nyata dalam hitungan hari, bukan minggu.
 
-- [ ] Input manual jadi jalur utama Fase 1
-- [ ] `klikindomaret` **tetap ada**, tapi turun status jadi eksperimen
-- [ ] Jangan tambah adapter scraper baru sampai Fase 1 selesai
+- [x] Input manual jadi jalur utama Fase 1
+- [x] `klikindomaret` **tetap ada**, tapi turun status jadi eksperimen
+- [x] Jangan tambah adapter scraper baru sampai Fase 1 selesai
 
 ---
 
@@ -269,27 +290,27 @@ Belum ada `npm test`. Pasang kerangka uji sekalian di fase ini.
 
 ### Uji pencarian
 
-- [ ] `"indomie goreng"` → cocok
-- [ ] `"mie goreng indomie"` → **tetap cocok** (urutan kata berbeda)
-- [ ] `"indomie mi goreng"` → **tetap cocok** (sinonim `mi`/`mie`)
-- [ ] `"INDOMIE GORENG"` → cocok (tak peduli huruf besar-kecil)
-- [ ] `"indomie   goreng!!"` → cocok (simbol & spasi berlebih)
-- [ ] `"indomie goreng"` **tidak** cocok dengan `"Mie Sedaap Goreng"` (gerbang merek)
-- [ ] `"aqua 600ml"` **tidak** cocok dengan `"Aqua 1500ml"` (gerbang ukuran)
-- [ ] Salah ketik ringan `"indomi goreng"` → *(opsional)*
+- [x] `"indomie goreng"` → cocok
+- [x] `"mie goreng indomie"` → **tetap cocok** (urutan kata berbeda)
+- [x] `"indomie mi goreng"` → **tetap cocok** (sinonim `mi`/`mie`)
+- [x] `"INDOMIE GORENG"` → cocok (tak peduli huruf besar-kecil)
+- [x] `"indomie   goreng!!"` → cocok (simbol & spasi berlebih)
+- [x] `"indomie goreng"` **tidak** cocok dengan `"Mie Sedaap Goreng"` (gerbang merek)
+- [x] `"aqua 600ml"` **tidak** cocok dengan `"Aqua 1500ml"` (gerbang ukuran)
+- [x] Salah ketik ringan `"indomi goreng"` → *(opsional)*
 
 ### Uji harga
 
-- [ ] Toko A `3000`, Toko B `3200` → **A muncul lebih dulu**
-- [ ] Produk tanpa harga → tidak *crash*, tampil "tidak tersedia"
-- [ ] Mode Hanya Nyata → harga perkiraan tersembunyi, urutan tetap benar
+- [x] Toko A `3000`, Toko B `3200` → **A muncul lebih dulu**
+- [x] Produk tanpa harga → tidak *crash*, tampil "tidak tersedia"
+- [x] Mode Hanya Nyata → harga perkiraan tersembunyi, urutan tetap benar
 
 ### Uji kestabilan
 
-- [ ] API tidak melempar error pada kueri kosong / aneh / sangat panjang
-- [ ] Bentuk balasan konsisten
-- [ ] `npx tsc --noEmit` nol error
-- [ ] `npm run build` hijau
+- [x] API tidak melempar error pada kueri kosong / aneh / sangat panjang
+- [x] Bentuk balasan konsisten
+- [x] `npx tsc --noEmit` nol error
+- [x] `npm run build` hijau
 
 ---
 
@@ -297,12 +318,12 @@ Belum ada `npm test`. Pasang kerangka uji sekalian di fase ini.
 
 Fase 1 dinyatakan selesai **hanya bila semuanya tercentang**:
 
-- [ ] Bisa mencari produk dengan urutan kata bebas
+- [x] Bisa mencari produk dengan urutan kata bebas
 - [ ] Bisa melihat harga dari **≥ 2 sumber nyata**
-- [ ] Pencocokan tidak kacau — semua uji §7 lulus
-- [ ] **Tidak bergantung AI sama sekali**
-- [ ] API tidak *crash*
-- [ ] **Aplikasi sudah benar-benar dibuka di browser** ⚠️ *utang dari sesi lalu*
+- [x] Pencocokan tidak kacau — semua uji §7 lulus
+- [x] **Tidak bergantung AI sama sekali**
+- [x] API tidak *crash*
+- [x] **Aplikasi sudah benar-benar dibuka di browser** ⚠️ *utang dari sesi lalu*
 - [ ] Harga nyata naik dari **10** → **≥ 75** baris
 
 ## ⛔ Aturan Berhenti
