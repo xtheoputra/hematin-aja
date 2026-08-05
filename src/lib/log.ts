@@ -20,7 +20,8 @@ export type KanalLog =
   | "admin" // input manual & perubahan data
   | "api" // error rute
   | "harga" // validasi harga
-  | "cari"; // kegagalan pencocokan
+  | "cari" // kegagalan pencocokan
+  | "klik"; // pengguna menyeberang ke situs toko
 
 export type BarisLog = {
   id: string;

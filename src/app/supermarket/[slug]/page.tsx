@@ -7,6 +7,7 @@ import StoreAvatar from "@/components/StoreAvatar";
 import ProductThumb from "@/components/ProductThumb";
 import PriceSourceBadge from "@/components/PriceSourceBadge";
 import HargaSatuanBadge from "@/components/HargaSatuanBadge";
+import TautanToko from "@/components/TautanToko";
 
 export const dynamic = "force-dynamic";
 
@@ -91,14 +92,13 @@ export default async function SupermarketDetailPage({
           {s.website && (
             <>
               {" · "}
-              <a
+              <TautanToko
+                slug={s.slug}
                 href={s.website}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="underline underline-offset-2"
               >
                 kunjungi situs
-              </a>
+              </TautanToko>
             </>
           )}
         </div>

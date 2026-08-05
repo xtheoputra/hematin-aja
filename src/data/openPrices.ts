@@ -16,6 +16,8 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { cobaLagi, log } from "../lib/log";
+import { periksaHarga } from "../lib/harga";
+import { barcodeBukanBarang, periksaKandidatProduk } from "../lib/impor";
 import {
   catatKeRingkasan,
   ringkasanKosong,
@@ -87,6 +89,14 @@ export type RefreshResult = {
   skipped: number;
   /** Ditolak validasi harga — dibedakan dari "dilewati", karena artinya beda. */
   rejected: number;
+  /**
+   * Ditolak gerbang mutu produk (buku/majalah, tanpa nama, harga tak wajar)
+   * SEBELUM apa pun dibuat. Dibedakan lagi dari `rejected` karena yang ini
+   * berarti "tidak ada produk sampah yang tertinggal" — dulu justru tertinggal.
+   */
+  ditolakMutu: number;
+  /** Contoh alasan penolakan mutu, untuk ditelusuri saat angkanya melonjak. */
+  alasanMutu: string[];
   byStore: Record<string, number>;
 };
 
@@ -142,6 +152,8 @@ export async function refreshRealPrices(
     inserted: 0,
     skipped: 0,
     rejected: 0,
+    ditolakMutu: 0,
+    alasanMutu: [],
     byStore: {},
   };
   const ringkas: RingkasanSimpan = ringkasanKosong();
@@ -192,32 +204,65 @@ export async function refreshRealPrices(
         continue;
       }
 
+      // Tolak buku & majalah sedini mungkin — sebelum satu pun permintaan
+      // jaringan ke Open Food Facts terbuang untuknya.
+      if (barcodeBukanBarang(barcode)) {
+        result.ditolakMutu++;
+        continue;
+      }
+
       // 3) Produk: cari via barcode; bila belum ada, buat dari OFF / data harga.
       let productId = productByBarcode.get(barcode);
       if (!productId) {
         const off = await offProductInfo(barcode);
-        const name = (
-          off?.product_name_id ||
-          off?.product_name ||
-          it.product_name ||
-          `Produk ${barcode}`
-        )
+        const name = (off?.product_name_id || off?.product_name || it.product_name || "")
           .toString()
           .trim()
           .slice(0, 70);
-        let slugP = slugify(name) || `produk-${barcode}`;
+        const catSlug = mapCategory(
+          off?.categories_tags ?? (it.category_tag ? [it.category_tag] : [])
+        );
+
+        // ⚠️ Gerbang mutu dijalankan SEBELUM produknya dibuat.
+        //
+        // Urutan lama membuat produk dulu dan memvalidasi harga belakangan
+        // lewat `simpanHarga()` — sehingga tiap harga yang ditolak tetap
+        // meninggalkan produk sampah di katalog selamanya. Harganya diperiksa
+        // di sini dengan fungsi yang sama persis, jadi tidak ada dua aturan.
+        const periksa = periksaKandidatProduk({
+          barcode,
+          nama: name,
+          satuan: off?.quantity,
+          hargaSah: periksaHarga(price, { kategori: catSlug }).sah,
+        });
+
+        if (!periksa.layak) {
+          result.ditolakMutu++;
+          if (result.alasanMutu.length < 20) {
+            result.alasanMutu.push(`${barcode}: ${periksa.pesan}`);
+          }
+          continue;
+        }
+
+        let slugP = slugify(periksa.nama);
+        if (!slugP) {
+          result.ditolakMutu++;
+          continue;
+        }
         if (usedSlugs.has(slugP)) slugP = `${slugP}-${barcode.slice(-4)}`;
         if (usedSlugs.has(slugP)) {
           result.skipped++;
           continue;
         }
-        const catSlug = mapCategory(off?.categories_tags ?? (it.category_tag ? [it.category_tag] : []));
+
         const created = await prisma.product.create({
           data: {
             slug: slugP,
-            name,
+            name: periksa.nama,
             brand: (off?.brands || "").split(",")[0].trim() || null,
-            unit: off?.quantity?.trim() || "1 pcs",
+            // Satuan tak terbaca disimpan KOSONG, bukan ditambal "1 pcs" —
+            // lihat catatan di `satuanDariSumberLuar()`.
+            unit: periksa.satuan,
             emoji: "🛒",
             image: off?.image_front_small_url || null,
             barcode,

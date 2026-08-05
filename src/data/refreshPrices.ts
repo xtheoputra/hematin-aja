@@ -17,6 +17,11 @@ async function main() {
   console.log(`  Harga nyata disimpan : ${r.inserted}`);
   console.log(`  Dilewati (duplikat)  : ${r.skipped}`);
   console.log(`  Ditolak validasi     : ${r.rejected}`);
+  console.log(`  Ditolak gerbang mutu : ${r.ditolakMutu}`);
+  if (r.alasanMutu.length) {
+    console.log("\n  Contoh yang ditolak gerbang mutu:");
+    for (const a of r.alasanMutu) console.log(`    • ${a}`);
+  }
   if (Object.keys(r.byStore).length) {
     console.log("  Per toko:", r.byStore);
   }

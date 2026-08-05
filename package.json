@@ -16,6 +16,7 @@
     "db:normalisasi": "tsx src/data/isiNormalizedName.ts",
     "db:statistik": "tsx src/data/statistik.ts",
     "db:periksa": "tsx src/data/periksaMutu.ts",
+    "db:bersihkan": "tsx src/data/bersihkanData.ts",
     "scrape": "tsx src/scrapers/run.ts",
     "import:off": "tsx src/data/importOpenFoodFacts.ts",
     "refresh": "tsx src/data/refreshPrices.ts",

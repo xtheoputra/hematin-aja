@@ -11,6 +11,7 @@ import {
   alignedCells,
   cellComparator,
   cellFor,
+  hargaTerakhirPerToko,
   minInStock,
   pickPerStore,
   type PriceWithStore,
@@ -169,5 +170,71 @@ kelompok("produk tanpa harga tidak bikin crash", () => {
     harus.sama(minInStock(per), null);
     const sel = alignedCells(per, [A]);
     harus.salah(sel[0].isCheapest);
+  });
+});
+
+// ─────────────────── Bayangan harga (Fase 1.5 §7) ───────────────────
+
+kelompok("hargaTerakhirPerToko() — bayangan saat mode aktif kosong", () => {
+  const semua = urutTerbaru([
+    harga("a", 3_400, { source: "seed", hari: 40 }),
+    harga("b", 3_000, { source: "manual", hari: 1 }),
+  ]);
+
+  uji("mengambil harga terakhir tiap toko apa pun sumbernya", () => {
+    const bayangan = hargaTerakhirPerToko(semua);
+    harus.sama(bayangan.get("a")?.price, 3_400);
+    harus.sama(bayangan.get("b")?.price, 3_000);
+  });
+
+  uji("yang diambil adalah yang TERBARU, bukan yang pertama masuk", () => {
+    const dua = urutTerbaru([
+      harga("a", 3_400, { hari: 40 }),
+      harga("a", 9_000, { hari: 90 }),
+    ]);
+    harus.sama(hargaTerakhirPerToko(dua).get("a")?.price, 3_400);
+  });
+
+  uji("mode Hanya Nyata: toko tanpa harga nyata membawa bayangan", () => {
+    const per = pickPerStore(semua, true); // hanya B yang punya harga nyata
+    const sel = alignedCells(per, [A, B], hargaTerakhirPerToko(semua));
+    const a = sel.find((c) => c.slug === "a")!;
+
+    harus.salah(a.available, "tersedia");
+    harus.sama(a.price, null);
+    harus.sama(a.bayanganHarga, 3_400);
+    harus.benar(a.bayanganDicatatPada, "tanggal bayangan");
+    harus.sama(a.bayanganSourceKind, "estimate");
+  });
+
+  uji("BAYANGAN TIDAK PERNAH IKUT MENENTUKAN TERMURAH", () => {
+    // Kalau ikut, mode Hanya Nyata kehilangan artinya: harga perkiraan lama
+    // akan memenangkan sebuah toko tanpa pernah tampil sebagai perkiraan.
+    const per = pickPerStore(semua, true);
+    harus.sama(minInStock(per), 3_000); // 3.400 milik A tidak ikut
+    const sel = alignedCells(per, [A, B], hargaTerakhirPerToko(semua));
+    harus.salah(sel.find((c) => c.slug === "a")!.isCheapest, "A termurah");
+    harus.benar(sel.find((c) => c.slug === "b")!.isCheapest, "B termurah");
+  });
+
+  uji("sel yang SUDAH punya harga tidak membawa bayangan", () => {
+    const per = pickPerStore(semua, false);
+    const sel = alignedCells(per, [A, B], hargaTerakhirPerToko(semua));
+    for (const c of sel) harus.sama(c.bayanganHarga, null);
+  });
+
+  uji("toko yang tak pernah punya harga sama sekali tetap kosong", () => {
+    const per = pickPerStore(semua, false);
+    const sel = alignedCells(per, [A, B, C], hargaTerakhirPerToko(semua));
+    const c = sel.find((x) => x.slug === "c")!;
+    harus.salah(c.available, "tersedia");
+    harus.sama(c.bayanganHarga, null);
+    harus.sama(c.bayanganSourceKind, "none");
+  });
+
+  uji("tanpa bayangan diberikan, perilaku lama tidak berubah", () => {
+    const per = pickPerStore(semua, true);
+    const sel = alignedCells(per, [A, B]);
+    harus.sama(sel.find((c) => c.slug === "a")!.bayanganHarga, null);
   });
 });

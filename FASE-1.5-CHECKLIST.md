@@ -208,11 +208,11 @@ tidak ada percobaan ulang, tidak ada log.
 ## 6. 📊 Analitik
 
 - [x] Tabel `SearchLog`: kueri, jumlah hasil, produk yang diklik, waktu
-- [ ] Produk paling sering dicari
+- [x] Produk paling sering dicari — panel Analitik di `/admin`
 - [x] **Kueri yang gagal** — ini paling berharga: langsung jadi daftar alias
       yang perlu ditambahkan
-- [ ] Jumlah pencarian harian
-- [ ] Klik ke tautan toko
+- [x] Jumlah pencarian harian — deret 14 hari, hari kosong tetap ditampilkan
+- [x] Klik ke tautan toko — `POST /api/klik` + `EventLog` kanal `klik`
 
 > 💡 **Gabungkan dengan §10.** "Analitik" dan "data latih untuk AI" adalah
 > **tabel yang sama** — kueri mentah + hasil pencocokan. Jangan bikin dua.
@@ -233,7 +233,7 @@ tidak ada percobaan ulang, tidak ada log.
 Sisa kerja:
 
 - [x] Saran saat pencarian nihil ("maksud Anda…?") — pakai kueri gagal dari §6
-- [ ] Saat harga kosong, tampilkan **data lama + umurnya**, jangan kosong total
+- [x] Saat harga kosong, tampilkan **data lama + umurnya**, jangan kosong total — `bayanganHarga` di `StoreCell`; TIDAK ikut menentukan termurah
 - [x] Urutkan varian ambigu berdasarkan ukuran, bukan abjad
 
 ---
@@ -283,7 +283,9 @@ Yang **benar-benar** perlu:
 - [x] Simpan **kueri mentah pengguna** + hasil pencocokan (tabel §6)
 - [x] Kumpulkan **alias produk** & variasi nama — tabel `ProductAlias` dari
       Fase 1 **sudah menjadi dataset itu sendiri**
-- [ ] Tandai pencocokan yang dikoreksi manusia → ini label emas untuk pelatihan
+- [x] Tandai pencocokan yang dikoreksi manusia → ini label emas untuk pelatihan —
+      `ProductAlias.dariKueriGagal`, diisi otomatis saat alias yang didaftarkan
+      ternyata cocok dengan kueri yang pernah nihil hasil
 
 > Setiap alias yang Anda masukkan manual di Fase 1 sekarang, otomatis jadi data
 > latih di Fase 2. Kerja itu tidak terbuang.
@@ -310,9 +312,9 @@ di Fase 1 & 1.5.
 
 - [x] Pencarian stabil
 - [x] Pencocokan akurat **≥ 80%** — *lihat cara ukur di bawah*
-- [ ] Harga konsisten
+- [x] Harga konsisten — gerbang saat tulis (`simpanHarga`), saat impor (`lib/impor.ts`), dan saat baca (`saringHargaMustahil`)
 - [x] API cepat
-- [ ] Data tidak kacau
+- [x] Data tidak kacau — `npm run db:periksa`: **0 harga bermasalah**, satuan terbaca 93/96
 - [x] Ada pencatatan log
 
 ### Cara mengukur "≥ 80%" supaya bukan sekadar klaim

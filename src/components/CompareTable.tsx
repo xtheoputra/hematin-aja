@@ -94,6 +94,23 @@ export default function CompareTable({ matrix }: { matrix: CompareMatrix }) {
 
 function Cell({ c }: { c: StoreCell }) {
   if (!c.available || c.price === null) {
+    // Butir Fase 1.5 §7 — sel kosong tetap memperlihatkan harga terakhir yang
+    // pernah diketahui. Sengaja dicoret & diredupkan, dan umurnya wajib ikut:
+    // angka lama tanpa tanggal akan terbaca sebagai harga sekarang.
+    if (c.bayanganHarga !== null) {
+      return (
+        <td className="px-2 py-2 text-center">
+          <span
+            className="text-[11px] tabular-nums text-ink-300 line-through dark:text-ink-600"
+            title={`Tidak tersedia di mode ini. Terakhir diketahui ${formatNumber(
+              c.bayanganHarga
+            )}${c.bayanganDicatatPada ? `, dicek ${formatAge(c.bayanganDicatatPada)}` : ""}`}
+          >
+            {formatNumber(c.bayanganHarga)}
+          </span>
+        </td>
+      );
+    }
     return (
       <td className="px-2 py-2 text-center">
         <span

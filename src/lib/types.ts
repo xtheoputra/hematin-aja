@@ -34,6 +34,15 @@ export type StoreCell = {
   recordedAt: string | null;
   isCheapest: boolean;
   vsMin: number | null; // selisih dari harga termurah pasar (0 = termurah)
+  /**
+   * Harga terakhir yang PERNAH diketahui di toko ini — hanya terisi saat
+   * `available` false. "Tidak tersedia" saja membuang informasi yang kita
+   * punya; "terakhir Rp 3.400, 41 hari lalu" masih berguna asal umurnya ikut.
+   * TIDAK pernah ikut menentukan mana yang termurah.
+   */
+  bayanganHarga: number | null;
+  bayanganDicatatPada: string | null;
+  bayanganSourceKind: SourceKind;
 };
 
 export type ProductListItem = {

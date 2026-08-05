@@ -4,6 +4,8 @@ import { adminDiaktifkan } from "@/lib/admin";
 import { sesiAdminSah } from "@/lib/adminSesi";
 import { getCategories, kueriGagalTeratas, ringkasanKerja } from "@/lib/queries";
 import { auditMutu } from "@/lib/queries/mutu";
+import { analitikPencarian } from "@/lib/queries/analitik";
+import AnalitikPencarianPanel from "@/components/admin/AnalitikPencarian";
 import { bacaLog } from "@/lib/log";
 import { formatAge, formatRupiah } from "@/lib/format";
 import PageHeader from "@/components/PageHeader";
@@ -29,7 +31,7 @@ export default async function AdminPage() {
     );
   }
 
-  const [produk, toko, kategori, kerja, gagal, log, mutu] = await Promise.all([
+  const [produk, toko, kategori, kerja, gagal, log, mutu, analitik] = await Promise.all([
     prisma.product.findMany({
       select: { slug: true, name: true, unit: true },
       orderBy: { name: "asc" },
@@ -43,6 +45,7 @@ export default async function AdminPage() {
     kueriGagalTeratas(10),
     bacaLog({ limit: 12 }),
     auditMutu(20),
+    analitikPencarian(),
   ]);
 
   const persen = kerja.totalProduk
@@ -145,6 +148,9 @@ export default async function AdminPage() {
             </table>
           </div>
         </section>
+
+        {/* Analitik pencarian — SearchLog akhirnya dibaca, bukan cuma diisi */}
+        <AnalitikPencarianPanel a={analitik} />
 
         {/* Mutu data — cacat yang tidak akan pernah ketahuan dari kode */}
         <section className="card p-4 md:p-5">

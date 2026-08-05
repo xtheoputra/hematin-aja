@@ -12,6 +12,7 @@ import {
   alignedCells,
   cellComparator,
   dayKey,
+  hargaTerakhirPerToko,
   pickPerStore,
   type PriceWithStore,
 } from "./pilih";
@@ -265,7 +266,13 @@ export async function getProductDetail(
 
     const prices = p.prices as PriceWithStore[];
     const perStore = pickPerStore(prices, realOnly);
-    const cells = alignedCells(perStore, supermarkets).sort(cellComparator);
+    // Bayangan = harga terakhir yang pernah diketahui, untuk toko yang di mode
+    // aktif tidak punya harga sama sekali. Lihat `hargaTerakhirPerToko()`.
+    const cells = alignedCells(
+      perStore,
+      supermarkets,
+      hargaTerakhirPerToko(prices)
+    ).sort(cellComparator);
     const availableCount = cells.filter((c) => c.available).length;
     const realCount = cells.filter((c) => c.isReal).length;
 

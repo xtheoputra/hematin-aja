@@ -4,6 +4,7 @@ import type { CompareMatrix } from "@/lib/types";
 import {
   REAL_SOURCES,
   alignedCells,
+  hargaTerakhirPerToko,
   minInStock,
   pickPerStore,
   type PriceWithStore,
@@ -55,8 +56,9 @@ export async function getCompareMatrix(opts: {
         ]);
 
       const rows = products.map((p) => {
-        const perStore = pickPerStore(p.prices as PriceWithStore[], realOnly);
-        const cells = alignedCells(perStore, supermarkets);
+        const harga = p.prices as PriceWithStore[];
+        const perStore = pickPerStore(harga, realOnly);
+        const cells = alignedCells(perStore, supermarkets, hargaTerakhirPerToko(harga));
         const min = minInStock(perStore);
         return {
           slug: p.slug,

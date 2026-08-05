@@ -8,35 +8,35 @@ tanpa membaca ulang seluruh kode.
 ## 🌅 BESOK MULAI DARI SINI
 
 **Kondisi tinggal:** `npx tsc --noEmit` nol error, `npm run build` hijau,
-**`npm test` 304/304 lulus**, aplikasi sudah dijalankan & agennya diuji
-terhadap database sungguhan lewat HTTP.
+**`npm test` 369/369 lulus**, `npm run db:periksa` **0 harga bermasalah**,
+aplikasi dijalankan & diperiksa (5 halaman `200`, panel admin & endpoint klik
+terverifikasi).
 
-### ⚠️ Temuan paling penting sesi 7 — DATA, bukan kode
+### ✅ Pembersihan data SUDAH dikerjakan (jangan diulang)
 
-`npm run db:periksa` (baru) menemukan: **5 dari 11 "harga nyata" adalah
-sampah**, dan semuanya bertanda NYATA karena datang dari Open Prices.
+Sesi 7 menemukan lalu **membereskan** sampah katalog. Yang terhapus:
+4 produk tanpa nama sungguhan (3 di antaranya nomor ISBN — buku yang ikut
+terimpor) + 6 baris harga tak masuk akal (Rp 20 – Rp 200), plus satuan
+`Buavita Juice Jambu 245ml` diperbaiki dari `"RH. 30"` → `"245ml"`.
+
+Cadangan sebelum penghapusan: **`prisma/dev.db.cadangan-sebelum-bersih`**.
+
+**Akibatnya angka "harga nyata" TURUN dari 11 → 5, dan itu memang angka yang
+benar.** Yang 6 tadi tidak pernah layak dihitung.
+
+Lubangnya juga sudah ditutup di `src/lib/impor.ts`, jadi impor berikutnya tidak
+akan mengulanginya.
+
+### Yang masih menunggu orang (tidak bisa ditebak program)
+
+3 satuan rusak yang jawabannya memang tidak diketahui — perbaiki lewat
+`/admin` kalau Anda tahu kemasannya:
 
 ```
-Rp 20  Alfamart Htg Coffe Papua @ Alfamart   [DITANDAI NYATA]
-Rp 20  Produk 9786238902507 @ Alfamart       [DITANDAI NYATA]
-Rp 48  Produk 9789835038556 @ Alfamart       [DITANDAI NYATA]
-Rp 80  Produk 9789797954789 @ Indomaret      [DITANDAI NYATA]
-Rp 200 Brownies Crispy @ Alfamart            [DITANDAI NYATA]
+Cleo                  "220"        (kemungkinan 220 ml, tapi jangan ditebak)
+Greensand lime apple  "1"
+Milku                 "susu uht"
 ```
-
-Tiga di antaranya bernama **nomor ISBN** — itu buku, ikut terimpor dari Open
-Food Facts. Artinya angka kemajuan "11 harga nyata" sebenarnya **±6**.
-
-**Kerjakan lebih dulu**, sebelum menambah harga baru:
-
-1. Buka `/admin` → panel **🩺 Mutu data**. Hapus/perbaiki 5 harga itu.
-2. Hapus 3 produk bernama nomor ISBN dari katalog.
-3. Periksa `importOpenFoodFacts.ts` — kenapa buku bisa lolos jadi produk
-   supermarket? Selama itu belum ditutup, impor berikutnya mengulang hal sama.
-4. Perbaiki 4 satuan rusak (`RH. 30`, `220`, `1`, `susu uht`). Yang
-   `Buavita Juice Jambu 245ml` jelas: namanya sendiri menyebut **245ml**.
-
-Baru setelah itu lanjut isi harga nyata (langkah di bawah).
 
 ### ⚠️ Pertama: setel sandi admin Anda sendiri
 
@@ -55,8 +55,10 @@ murni **pekerjaan data**, dan alatnya sudah ada:
 
 1. Buka `/admin`, masuk pakai sandi.
 2. Bar "Kemajuan harga nyata" menunjukkan angka sesungguhnya — sekarang
-   **10 dari 100 produk (10%)**, 11 baris harga nyata.
-3. Tabel "Belum punya harga nyata" adalah antreannya, yang paling kosong di atas.
+   **5 baris harga nyata** dari 96 produk, setelah pembersihan.
+3. Tabel "Belum punya harga nyata" adalah antreannya, yang paling kosong di
+   atas. **Tapi urutan yang lebih baik ada di panel 📊 Analitik pencarian:
+   isi dulu produk yang benar-benar dicari orang.**
 4. Fokus **satu kategori dulu: mie instan**. 15 produk × 5 toko = 75 harga nyata,
    selesai dalam hitungan hari. Tersebar tipis ke 100 produk tidak akan pernah
    terasa selesai.
@@ -188,6 +190,73 @@ src/components/agen/{KartuKeputusan,DaftarPeringatan,PeringkatToko,
                      DaftarBelanja,SaranPengganti,AturOngkos}.tsx
 uji/09-satuan.uji.ts  uji/10-agen.uji.ts  uji/11-tren.uji.ts
 ```
+
+---
+
+## Sesi 7b — 5 Agustus 2026 · "Menutup lubang, membersihkan, mengukur"
+
+Lanjutan langsung dari Sesi 7. **`npm test` 304 → 369.**
+
+### 1. Lubang importir ditutup — `src/lib/impor.ts` (murni)
+
+Penyelidikan menemukan **empat** kebocoran, semuanya di satu blok
+`openPrices.ts`:
+
+| Kebocoran | Akibatnya di katalog |
+| --- | --- |
+| Barcode Bookland diterima | Buku (`978…`) & majalah (`977…`) jadi "produk snack" |
+| `\`Produk ${barcode}\`` sebagai nama cadangan | 4 produk yang namanya tidak menamai apa pun |
+| `quantity` OFF ditelan mentah | Satuan `"RH. 30"`, `"220"`, `"susu uht"` |
+| **Urutan terbalik** | Produk dibuat DULU, harga divalidasi belakangan → tiap harga yang ditolak meninggalkan produk sampah |
+
+Yang terakhir paling merusak dan paling tak terlihat. Sekarang harga diperiksa
+**sebelum** produknya dibuat, memakai `periksaHarga()` yang sama — bukan aturan
+kedua yang bisa menyimpang.
+
+Satuan tak terbaca kini disimpan **kosong**, bukan ditambal `"1 pcs"`.
+Menambalnya berarti mengaku tahu isi kemasan padahal tidak, DAN membuat
+cacatnya lolos panel Mutu data selamanya.
+
+### 2. `npm run db:bersihkan` — pratinjau adalah bawaan
+
+Menghapus 4 produk + 6 harga, memperbaiki 1 satuan. **Tidak menghapus apa pun
+sampai diberi `--terapkan`**; skrip yang menghapus begitu dijalankan cepat atau
+lambat menghapus sesuatu yang tidak diniatkan.
+
+Aturannya bukan daftar nama yang ditulis tangan, melainkan `namaProdukLayak()`
+yang sama dengan gerbang impor — karena itu ia menemukan satu produk yang
+sebelumnya tidak terhitung (`Produk 6931068501151`, barcode Cina, bukan ISBN).
+
+### 3. Analitik pencarian — `SearchLog` akhirnya dibaca
+
+Tabelnya terisi sejak Sesi 6 tapi isinya tak pernah ditampilkan di mana pun.
+Panel baru di `/admin`: kueri terpopuler, deret 14 hari (hari kosong tetap
+digambar — kalau dilewati, jeda panjang jadi tak terlihat), sebaran jalur
+pencocokan, dan klik ke situs toko.
+
+**Ini mengubah urutan kerja pengisian data:** daftar "paling kosong" kalah
+berguna dibanding daftar "paling dicari".
+
+### 4. Sisa Fase 1.5 — dari 9 butir terbuka jadi 2
+
+- **§7 harga kosong → data lama + umurnya.** `StoreCell.bayanganHarga`. Aturan
+  kerasnya: bayangan **tidak pernah ikut menentukan mana yang termurah** —
+  begitu ikut, mode "Hanya Nyata" kehilangan artinya. Dikunci uji.
+- **§6 klik ke tautan toko.** `POST /api/klik` + `sendBeacon` (fetch biasa
+  sering dibatalkan navigasi — persis saat pencatatan dibutuhkan). Tidak
+  menyimpan apa pun tentang siapa yang mengklik.
+- **§10 label emas.** `ProductAlias.dariKueriGagal` — terisi otomatis saat
+  alias yang didaftarkan ternyata cocok dengan kueri yang pernah nihil.
+  `source: "manual"` cuma berarti "diketik orang"; yang berharga adalah
+  pasangan *kalimat pengguna sungguhan → produk yang benar*.
+- **§12 "Harga konsisten" & "Data tidak kacau"** dicentang dengan bukti:
+  `npm run db:periksa` = 0 harga bermasalah.
+
+**Dua yang sengaja dibiarkan terbuka:**
+
+- §1.3 tanda "kedaluwarsa > 7 hari" — checklist-nya sendiri bilang tunggu
+  sampai ada data segar; kalau dinyalakan sekarang 100% data merah.
+- §9 saran otomatis saat mengetik — ditandai opsional & "kerjakan terakhir".
 
 ---
 

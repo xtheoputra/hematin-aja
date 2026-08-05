@@ -67,6 +67,13 @@ model ProductAlias {
   alias           String // nama apa adanya dari sumber
   normalizedAlias String // hasil normalize(alias)
   source          String? // asal alias: toko/marketplace mana
+  // LABEL EMAS untuk Fase 2 (checklist §10).
+  //
+  // `source = "manual"` cuma berarti "diketik orang". Yang benar-benar
+  // berharga adalah alias yang lahir dari kueri yang PERNAH GAGAL: ia
+  // menghubungkan kalimat pengguna sungguhan ke produk yang benar, dan
+  // pasangan seperti itu tidak bisa dikarang belakangan.
+  dariKueriGagal  Boolean  @default(false)
   createdAt       DateTime @default(now())
 
   @@unique([productId, normalizedAlias])

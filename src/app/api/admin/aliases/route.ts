@@ -63,18 +63,42 @@ export async function POST(req: Request) {
       return sukses({ pesan: "Alias itu sudah terdaftar.", produk: produk.name });
     }
 
+    // Label emas (§10): alias yang lahir dari kueri yang PERNAH GAGAL adalah
+    // pasangan "kalimat pengguna sungguhan → produk yang benar". Ditandai di
+    // sini, selagi kaitannya masih diketahui — kalau ditunda, hubungan itu
+    // hilang dan tak bisa direkonstruksi dari tabel mana pun.
+    const pernahGagal = await prisma.searchLog.findFirst({
+      where: { normalized: normalizedAlias, resultCount: 0 },
+      select: { id: true },
+    });
+
     await prisma.productAlias.create({
       data: {
         productId: produk.id,
         alias,
         normalizedAlias,
         source: teks(body.sumber) ?? "manual",
+        dariKueriGagal: !!pernahGagal,
       },
     });
 
     batalkanCache();
-    await log.info("admin", `Alias baru untuk ${produk.name}: "${alias}"`);
-    return sukses({ pesan: "Alias tersimpan.", produk: produk.name, alias }, 201);
+    await log.info(
+      "admin",
+      `Alias baru untuk ${produk.name}: "${alias}"` +
+        (pernahGagal ? " (label emas — dari kueri yang pernah gagal)" : "")
+    );
+    return sukses(
+      {
+        pesan: pernahGagal
+          ? "Alias tersimpan, dan tercatat sebagai label emas karena kueri ini pernah gagal."
+          : "Alias tersimpan.",
+        produk: produk.name,
+        alias,
+        labelEmas: !!pernahGagal,
+      },
+      201
+    );
   } catch (e) {
     await log.galat("admin", "POST /api/admin/aliases gagal", detailGalat(e));
     return gagal(pesanAman(e), 500);

@@ -17,6 +17,8 @@ next-env.d.ts
 # database (SQLite)
 /prisma/*.db
 /prisma/*.db-journal
+# Cadangan database sebelum pembersihan (npm run db:bersihkan) — jangan ikut git
+/prisma/*.cadangan-*
 *.sqlite
 
 # env

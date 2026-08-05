@@ -86,13 +86,14 @@ npm run dev          # jalankan di http://localhost:3000
 Skrip lain:
 
 ```bash
-npm test             # 304 pemeriksaan, ±1 detik — pakai ini, jangan verifikasi manual
+npm test             # 369 pemeriksaan, ±1 detik — pakai ini, jangan verifikasi manual
 npm run db:seed      # isi ulang data contoh
 npm run db:reset     # reset DB + seed ulang
 npm run db:studio    # buka Prisma Studio (lihat/ubah data)
 npm run db:normalisasi # isi ulang Product.normalizedName + alias dari slug
 npm run db:statistik # berapa produk, berapa harga, berapa yang NYATA
 npm run db:periksa   # audit MUTU data: harga mustahil & satuan tak terbaca
+npm run db:bersihkan # pratinjau pembersihan data (tambah -- --terapkan untuk eksekusi)
 npm run ukur         # ukur biaya kueri harga (sebelum vs sesudah pembatasan)
 npm run import:off    # impor produk Indonesia ASLI dari Open Food Facts (mis. `npm run import:off -- 40`)
 npm run scrape       # jalankan scraper aktif (lihat di bawah)
@@ -166,7 +167,7 @@ src/
     keranjang/         # banding total belanja → toko termurah
     insight/           # insight & rekomendasi hemat
     admin/             # 🔐 input harga nyata, produk, alias + daftar kerja
-    api/               # /products, /insights, /compare, /admin/*
+    api/               # /products, /insights, /agen, /klik, /admin/*
   components/          # UI: kartu produk, grafik, navigasi, keranjang
   lib/
     normalize.ts       # normalisasi & pencocokan nama (MURNI, tanpa DB)
@@ -175,6 +176,7 @@ src/
     cache.ts           # cache lapisan data — kunci WAJIB memuat realOnly
     log.ts             # catatan kejadian tersimpan + percobaan ulang
     admin.ts           # sandi & pembatas laju (MURNI, tanpa next/headers)
+    impor.ts           # gerbang mutu produk dari sumber luar (MURNI)
     satuan.ts          # harga per satuan (MURNI) — dasar semua perbandingan lintas ukuran
     agen/              # mesin keputusan belanja (MURNI, tanpa DB/LLM/jaringan)
       rencana.ts       #   total setara antar-toko, pecah 2 toko, keyakinan
@@ -187,6 +189,7 @@ src/
       cari.ts          #   alur pencarian bertingkat
       agen.ts          #   pengumpul data untuk mesin keputusan
       mutu.ts          #   audit mutu data katalog
+      analitik.ts      #   ringkasan pencarian & klik (bagian ringkas MURNI)
       produk.ts toko.ts banding.ts insight.ts
   scrapers/            # framework scraper + adapter per toko
 uji/                   # `npm test` — kerangka sendiri, tanpa dependensi baru

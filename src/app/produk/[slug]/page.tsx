@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProductDetail } from "@/lib/queries";
 import { getDisplayMode, isRealOnly } from "@/lib/mode";
-import { formatRupiah, formatPercent } from "@/lib/format";
+import { formatRupiah, formatPercent, formatAge } from "@/lib/format";
 import PriceChart from "@/components/PriceChart";
 import AddToCartButton from "@/components/AddToCartButton";
 import StoreAvatar from "@/components/StoreAvatar";
@@ -222,7 +222,20 @@ export default async function ProductPage({
                         )}
                       </div>
                       {!s.available ? (
-                        <p className="text-[11px] text-ink-400">Belum ada data harga</p>
+                        s.bayanganHarga !== null ? (
+                          // Butir Fase 1.5 §7: harga kosong tidak dibiarkan
+                          // kosong total — yang pernah diketahui tetap
+                          // diperlihatkan, LENGKAP dengan umurnya supaya tidak
+                          // terbaca sebagai harga sekarang.
+                          <p className="text-[11px] text-ink-400">
+                            Tak ada harga di mode ini · terakhir{" "}
+                            {formatRupiah(s.bayanganHarga)}
+                            {s.bayanganDicatatPada &&
+                              ` (${formatAge(s.bayanganDicatatPada)})`}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-ink-400">Belum ada data harga</p>
+                        )
                       ) : !s.inStock ? (
                         <p className="text-[11px] font-medium text-rose-400">Stok habis</p>
                       ) : isBest ? (

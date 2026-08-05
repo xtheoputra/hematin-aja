@@ -78,6 +78,29 @@ export function pickPerStore(
   return out;
 }
 
+/**
+ * Harga terakhir yang PERNAH diketahui per toko, apa pun sumbernya.
+ *
+ * Dipakai hanya sebagai **bayangan**: saat mode tampilan aktif tidak punya
+ * harga untuk sebuah toko, menulis "Tidak tersedia" saja membuang informasi
+ * yang sebenarnya kita punya. "Terakhir Rp 3.400, dicek 41 hari lalu" jauh
+ * lebih berguna — asalkan umurnya ikut, supaya tak terbaca sebagai harga
+ * sekarang.
+ *
+ * Sengaja fungsi terpisah, bukan dijahit ke `pickPerStore()`: bayangan TIDAK
+ * BOLEH ikut menentukan mana yang termurah. Begitu ia ikut dihitung, mode
+ * "Hanya Nyata" kehilangan artinya.
+ */
+export function hargaTerakhirPerToko(
+  prices: PriceWithStore[]
+): Map<string, StorePrice> {
+  const out = new Map<string, StorePrice>();
+  for (const p of prices) {
+    if (!out.has(p.supermarketId)) out.set(p.supermarketId, toStorePrice(p));
+  }
+  return out;
+}
+
 export function minInStock(perStore: Map<string, StorePrice>): number | null {
   const arr = [...perStore.values()].filter((s) => s.inStock).map((s) => s.price);
   return arr.length ? Math.min(...arr) : null;
@@ -86,7 +109,9 @@ export function minInStock(perStore: Map<string, StorePrice>): number | null {
 export function cellFor(
   sm: SupermarketLite,
   sp: StorePrice | undefined,
-  min: number | null
+  min: number | null,
+  /** Harga terakhir yang pernah diketahui — hanya dipakai saat `sp` kosong. */
+  bayangan?: StorePrice
 ): StoreCell {
   if (!sp) {
     return {
@@ -104,6 +129,9 @@ export function cellFor(
       recordedAt: null,
       isCheapest: false,
       vsMin: null,
+      bayanganHarga: bayangan?.price ?? null,
+      bayanganDicatatPada: bayangan?.recordedAt ?? null,
+      bayanganSourceKind: bayangan?.sourceKind ?? "none",
     };
   }
   return {
@@ -121,16 +149,23 @@ export function cellFor(
     recordedAt: sp.recordedAt,
     isCheapest: sp.inStock && min !== null && sp.price === min,
     vsMin: sp.inStock && min !== null ? sp.price - min : null,
+    // Sel yang sudah punya harga tidak perlu bayangan.
+    bayanganHarga: null,
+    bayanganDicatatPada: null,
+    bayanganSourceKind: "none",
   };
 }
 
 // Satu sel per supermarket, MENGIKUTI urutan daftar supermarket (untuk matriks).
 export function alignedCells(
   perStore: Map<string, StorePrice>,
-  supermarkets: SupermarketLite[]
+  supermarkets: SupermarketLite[],
+  bayangan?: Map<string, StorePrice>
 ): StoreCell[] {
   const min = minInStock(perStore);
-  return supermarkets.map((sm) => cellFor(sm, perStore.get(sm.id), min));
+  return supermarkets.map((sm) =>
+    cellFor(sm, perStore.get(sm.id), min, bayangan?.get(sm.id))
+  );
 }
 
 export function cellRank(c: StoreCell): number {
