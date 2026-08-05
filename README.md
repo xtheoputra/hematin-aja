@@ -86,12 +86,13 @@ npm run dev          # jalankan di http://localhost:3000
 Skrip lain:
 
 ```bash
-npm test             # 166 pemeriksaan, ±1 detik — pakai ini, jangan verifikasi manual
+npm test             # 304 pemeriksaan, ±1 detik — pakai ini, jangan verifikasi manual
 npm run db:seed      # isi ulang data contoh
 npm run db:reset     # reset DB + seed ulang
 npm run db:studio    # buka Prisma Studio (lihat/ubah data)
 npm run db:normalisasi # isi ulang Product.normalizedName + alias dari slug
 npm run db:statistik # berapa produk, berapa harga, berapa yang NYATA
+npm run db:periksa   # audit MUTU data: harga mustahil & satuan tak terbaca
 npm run ukur         # ukur biaya kueri harga (sebelum vs sesudah pembatasan)
 npm run import:off    # impor produk Indonesia ASLI dari Open Food Facts (mis. `npm run import:off -- 40`)
 npm run scrape       # jalankan scraper aktif (lihat di bawah)
@@ -174,10 +175,18 @@ src/
     cache.ts           # cache lapisan data — kunci WAJIB memuat realOnly
     log.ts             # catatan kejadian tersimpan + percobaan ulang
     admin.ts           # sandi & pembatas laju (MURNI, tanpa next/headers)
+    satuan.ts          # harga per satuan (MURNI) — dasar semua perbandingan lintas ukuran
+    agen/              # mesin keputusan belanja (MURNI, tanpa DB/LLM/jaringan)
+      rencana.ts       #   total setara antar-toko, pecah 2 toko, keyakinan
+      peringatan.ts    #   peringatan mutu data
+      substitusi.ts    #   saran pengganti berbasis Rp/satuan
     queries/
       pilih.ts         #   aturan "mana yang termurah" (MURNI, tanpa DB)
+      tren.ts          #   penurunan harga & rekomendasi hemat (MURNI, tanpa DB)
       muat.ts          #   pemuatan harga secukupnya
       cari.ts          #   alur pencarian bertingkat
+      agen.ts          #   pengumpul data untuk mesin keputusan
+      mutu.ts          #   audit mutu data katalog
       produk.ts toko.ts banding.ts insight.ts
   scrapers/            # framework scraper + adapter per toko
 uji/                   # `npm test` — kerangka sendiri, tanpa dependensi baru

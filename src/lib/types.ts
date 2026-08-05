@@ -88,29 +88,9 @@ export type ProductDetail = {
   } | null; // null bila tak ada harga sama sekali (mis. mode "real")
 };
 
-export type CartCompareLine = {
-  productId: string;
-  name: string;
-  emoji: string;
-  unit: string;
-  qty: number;
-  price: number | null; // harga di toko ini (null = tidak tersedia)
-  available: boolean;
-  isReal: boolean;
-  sourceKind: SourceKind;
-};
-
-export type CartCompareStore = {
-  supermarketId: string;
-  slug: string;
-  name: string;
-  color: string;
-  total: number;
-  availableCount: number;
-  missingCount: number;
-  realCount: number;
-  lines: CartCompareLine[];
-};
+// Bentuk hasil perbandingan keranjang tinggal di `@/lib/agen/tipe.ts`, bukan di
+// sini: keranjang sekarang diputuskan oleh mesin keputusan, dan tipenya ikut
+// mesinnya supaya tidak ada dua bentuk untuk hal yang sama.
 
 export type SupermarketSummary = {
   slug: string;
@@ -177,17 +157,33 @@ export type Insights = {
     oldPrice: number;
     newPrice: number;
     changePct: number;
+    // Penurunan dari harga perkiraan bukan kabar yang sama kuatnya dengan
+    // penurunan yang benar-benar dicek. Bedanya harus terbawa sampai ke UI.
+    isReal: boolean;
   }[];
   cheapestStoreOverall: { name: string; color: string; winRate: number } | null;
+  /**
+   * Rekomendasi hemat, seluruhnya berdasar HARGA PER SATUAN. Tanpa itu,
+   * "termurah di kategori ini" cuma berarti "angkanya paling kecil", dan
+   * beras 5 kg selalu kalah dari gula 1 kg.
+   */
   recommendations: {
     categoryName: string;
     pickName: string;
     pickSlug: string;
     pickEmoji: string;
     pickPrice: number;
+    pickUnit: string;
     pickStore: string;
-    comparedTo: string;
-    saving: number;
+    /** Rp per kg / L / pcs. */
+    perSatuan: number;
+    satuanTampil: string;
+    /** Pembanding: median per satuan produk sebanding di kategori yang sama. */
+    medianPerSatuan: number;
+    hematPerSatuan: number;
+    hematPersen: number;
+    /** Berapa produk sebanding yang ikut jadi pembanding. */
+    jumlahPembanding: number;
   }[];
   realPriceCount: number; // total harga nyata di database (untuk banner kejujuran)
 };

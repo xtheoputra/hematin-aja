@@ -8,8 +8,35 @@ tanpa membaca ulang seluruh kode.
 ## 🌅 BESOK MULAI DARI SINI
 
 **Kondisi tinggal:** `npx tsc --noEmit` nol error, `npm run build` hijau,
-**`npm test` 166/166 lulus**, aplikasi sudah dijalankan & diperiksa
-(9 halaman `200`, log bersih).
+**`npm test` 304/304 lulus**, aplikasi sudah dijalankan & agennya diuji
+terhadap database sungguhan lewat HTTP.
+
+### ⚠️ Temuan paling penting sesi 7 — DATA, bukan kode
+
+`npm run db:periksa` (baru) menemukan: **5 dari 11 "harga nyata" adalah
+sampah**, dan semuanya bertanda NYATA karena datang dari Open Prices.
+
+```
+Rp 20  Alfamart Htg Coffe Papua @ Alfamart   [DITANDAI NYATA]
+Rp 20  Produk 9786238902507 @ Alfamart       [DITANDAI NYATA]
+Rp 48  Produk 9789835038556 @ Alfamart       [DITANDAI NYATA]
+Rp 80  Produk 9789797954789 @ Indomaret      [DITANDAI NYATA]
+Rp 200 Brownies Crispy @ Alfamart            [DITANDAI NYATA]
+```
+
+Tiga di antaranya bernama **nomor ISBN** — itu buku, ikut terimpor dari Open
+Food Facts. Artinya angka kemajuan "11 harga nyata" sebenarnya **±6**.
+
+**Kerjakan lebih dulu**, sebelum menambah harga baru:
+
+1. Buka `/admin` → panel **🩺 Mutu data**. Hapus/perbaiki 5 harga itu.
+2. Hapus 3 produk bernama nomor ISBN dari katalog.
+3. Periksa `importOpenFoodFacts.ts` — kenapa buku bisa lolos jadi produk
+   supermarket? Selama itu belum ditutup, impor berikutnya mengulang hal sama.
+4. Perbaiki 4 satuan rusak (`RH. 30`, `220`, `1`, `susu uht`). Yang
+   `Buavita Juice Jambu 245ml` jelas: namanya sendiri menyebut **245ml**.
+
+Baru setelah itu lanjut isi harga nyata (langkah di bawah).
 
 ### ⚠️ Pertama: setel sandi admin Anda sendiri
 
@@ -33,7 +60,8 @@ murni **pekerjaan data**, dan alatnya sudah ada:
 4. Fokus **satu kategori dulu: mie instan**. 15 produk × 5 toko = 75 harga nyata,
    selesai dalam hitungan hari. Tersebar tipis ke 100 produk tidak akan pernah
    terasa selesai.
-5. Ukur kapan saja: `npm run db:statistik`.
+5. Ukur kapan saja: `npm run db:statistik`, dan periksa mutunya dengan
+   `npm run db:periksa`.
 
 Setelah ada ≥ 75 harga nyata, mode **Hanya Nyata** akhirnya berisi sesuatu, dan
 Definisi Selesai Fase 1 (`FASE-1-CHECKLIST.md` §8) tinggal satu baris lagi.
@@ -55,6 +83,111 @@ Definisi Selesai Fase 1 (`FASE-1-CHECKLIST.md` §8) tinggal satu baris lagi.
 - **Adapter scraper baru** — `klikindomaret` masih belum terbukti jalan.
   Input manual lebih cepat berbuah.
 - **Menulis dokumen rencana baru** — rasionya sudah berat ke rencana.
+
+---
+
+## Sesi 7 — 5 Agustus 2026 · "Agen Belanja & Harga Per Satuan"
+
+**Status akhir:** `tsc` nol error, `npm run build` hijau, **`npm test` 304/304**
+(dari 166), agen diuji terhadap database sungguhan lewat HTTP.
+
+Sesi ini menambah dua hal yang sebelumnya tidak ada, dan keduanya saling
+bergantung: **harga per satuan** dan **mesin keputusan belanja**.
+
+### 1. Harga per satuan — `src/lib/satuan.ts`
+
+Sampai sesi ini, seluruh aplikasi hanya membandingkan **harga mutlak**, dan itu
+diam-diam salah: "Beras 5 kg Rp 62.000" terlihat jauh lebih mahal daripada
+"Beras 1 kg Rp 13.500", padahal Rp 12.400/kg vs Rp 13.500/kg. Aplikasi yang
+seluruh gunanya menghemat justru menunjuk pilihan yang lebih boros.
+
+Parsernya dibangun dari satuan yang **benar-benar ada di katalog**, bukan
+contoh rapi buatan sendiri: `"1 pcs (85 g)"` → 85 g (isi bersih menang atas
+kemasan), `"24 x 6.5g"` → 156 g (kemasan majemuk), `"500ml"`, `"84gr"`,
+`"1.5 L"`, `"isi 30"`. **Terbaca 96 dari 100 produk.** Yang tak terbaca
+mengembalikan `null`, tidak pernah menebak.
+
+Sekarang tampil di kartu produk, detail produk, tabel banding, halaman toko,
+dan seluruh keluaran agen.
+
+### 2. Agen belanja — `src/lib/agen/`
+
+Mesin keputusan **deterministik**: tanpa model bahasa, tanpa API berbayar,
+jalan luring, dan tiap angkanya bisa ditelusuri sampai ke barisnya.
+
+| Bagian | Isinya |
+| --- | --- |
+| `rencana.ts` | total setara antar-toko, pemecahan 2 toko, keyakinan, penyaring harga mustahil |
+| `peringatan.ts` | 6 jenis peringatan mutu data |
+| `substitusi.ts` | saran pengganti berbasis Rp/satuan |
+| `tipe.ts` | bentuk yang dipakai bersama API & UI |
+
+Tiga keputusan yang menentukan seluruh rancangannya:
+
+1. **Total yang benar-benar sebanding.** Cara lama (`compareCart`) hanya
+   menjumlahkan barang yang tersedia, sehingga toko yang punya 2 dari 8 barang
+   selalu "termurah". Sekarang barang yang kurang tetap dihitung dengan harga
+   pasar termurah **plus satu ongkos perjalanan**, karena sisanya memang
+   menuntut mampir ke tempat lain. Satu aturan untuk semuanya: *tiap kunjungan
+   toko setelah yang pertama berongkos*.
+2. **Pecah belanja hanya kalau sepadan.** Hemat harus melampaui ongkos
+   perjalanan **dan** ambang 3%. Ongkosnya bisa disetel pengguna (Gratis –
+   Rp 35.000) dan diingat, karena orang yang jalan kaki ke minimarket sebelah
+   dan orang yang naik motor 20 menit tidak boleh dapat saran yang sama.
+3. **Keyakinan dinyatakan, bukan disembunyikan.** Dihitung dari porsi harga
+   nyata × kesegaran × kelengkapan, lengkap dengan kalimat alasannya.
+
+`compareCart()` dan `/api/compare` **dihapus** — dua mesin yang sama-sama
+menghitung "total per toko" pasti menyimpang. Penggantinya `/api/agen`.
+
+### 🐞 Bug lama yang diperbaiki
+
+| Bug | Kenapa berbahaya |
+| --- | --- |
+| **"Harga lagi turun" palsu** di `/insight` | Harga NYATA terbaru diadu dengan PERKIRAAN lama di toko yang sama. Itu bukan penurunan harga — itu pergantian sumber data |
+| **Rekomendasi hemat lintas ukuran** | Gula 1 kg dinyatakan "lebih hemat" daripada beras 5 kg. Angka hematnya karangan. Sekarang per satuan, pembanding median, minimal 3 produk sebanding |
+| **Badge hemat hilang di keranjang** | `maxSaving` membandingkan toko terbaik dengan toko yang barangnya paling sedikit, lalu digugurkan sendiri oleh penjaganya |
+| **Total keranjang tak sebanding** | Lihat keputusan 1 di atas |
+
+Ketiganya dikunci uji regresi di `uji/10-agen.uji.ts` & `uji/11-tren.uji.ts`.
+
+### 🔬 Dua cacat yang HANYA ketahuan setelah agen dijalankan pada data nyata
+
+Uji hijau tidak menangkap satu pun dari keduanya — sama seperti pelajaran
+Sesi 6, dan kali ini pun uji yang menemukan cuma yang ditulis **setelah**
+melihat hasilnya.
+
+1. **Saran pengganti yang absurd.** Agen dengan yakin menyuruh mengganti
+   **Adem Sari dengan air mineral**, dan **oatmeal dengan kopi sachet** —
+   semuanya sekategori "minuman". Kategori ternyata terlalu kasar untuk
+   dipakai sebagai penanda "barang sejenis". Sekarang pengganti wajib berbagi
+   kata jenis ("air mineral" dengan "air mineral").
+2. **Kopi seharga Rp 20.** Harga itu masuk sebelum `periksaHarga()` ada, dan
+   ikut menarik total sebuah toko ke bawah. Sekarang `saringHargaMustahil()`
+   membuangnya sebelum apa pun dihitung, dan melaporkannya sebagai peringatan
+   — bukan menghilangkannya diam-diam.
+
+### 3. `npm run db:periksa` + panel 🩺 Mutu data di `/admin`
+
+Lahir dari temuan di atas: cacat **isi database** tidak akan pernah tertangkap
+`npm test`, karena uji memeriksa kode. Sekarang ada satu tempat yang bisa
+ditanyai "apa saja yang rusak?" — dan jawabannya jadi antrean kerja.
+
+### Berkas baru
+
+```
+src/lib/satuan.ts              parser satuan + harga per satuan
+src/lib/agen/{index,rencana,peringatan,substitusi,tipe}.ts
+src/lib/queries/agen.ts        pengumpul data untuk agen
+src/lib/queries/tren.ts        penurunan harga & rekomendasi (murni)
+src/lib/queries/mutu.ts        audit mutu data
+src/data/periksaMutu.ts        npm run db:periksa
+src/app/api/agen/route.ts      POST /api/agen
+src/components/HargaSatuanBadge.tsx
+src/components/agen/{KartuKeputusan,DaftarPeringatan,PeringkatToko,
+                     DaftarBelanja,SaranPengganti,AturOngkos}.tsx
+uji/09-satuan.uji.ts  uji/10-agen.uji.ts  uji/11-tren.uji.ts
+```
 
 ---
 

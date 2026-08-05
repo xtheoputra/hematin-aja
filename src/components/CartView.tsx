@@ -4,55 +4,80 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "@/components/CartProvider";
 import { formatRupiah } from "@/lib/format";
-import StoreAvatar from "@/components/StoreAvatar";
 import PageHeader from "@/components/PageHeader";
-import type { CartCompareStore } from "@/lib/types";
+import KartuKeputusan from "@/components/agen/KartuKeputusan";
+import DaftarPeringatan from "@/components/agen/DaftarPeringatan";
+import PeringkatToko from "@/components/agen/PeringkatToko";
+import DaftarBelanja from "@/components/agen/DaftarBelanja";
+import SaranPengganti from "@/components/agen/SaranPengganti";
+import AturOngkos from "@/components/agen/AturOngkos";
+import { BIAYA_PERJALANAN_BAWAAN, type Rencana } from "@/lib/agen";
 import type { DisplayMode } from "@/lib/modeShared";
+
+const KUNCI_ONGKOS = "hematin-ongkos-v1";
 
 export default function CartView({ mode }: { mode: DisplayMode }) {
   const { items, setQty, remove, clear, count } = useCart();
-  const [stores, setStores] = useState<CartCompareStore[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [rencana, setRencana] = useState<Rencana | null>(null);
+  const [memuat, setMemuat] = useState(false);
+  const [gagal, setGagal] = useState(false);
+  const [ongkos, setOngkos] = useState(BIAYA_PERJALANAN_BAWAAN);
+  const [siap, setSiap] = useState(false);
+
+  // Ongkos perjalanan diingat: menyetelnya ulang tiap membuka halaman akan
+  // membuat sarannya berubah-ubah tanpa sebab yang terlihat pengguna.
+  useEffect(() => {
+    const simpanan = Number(localStorage.getItem(KUNCI_ONGKOS));
+    if (Number.isFinite(simpanan) && simpanan >= 0) setOngkos(simpanan);
+    setSiap(true);
+  }, []);
 
   useEffect(() => {
+    if (siap) localStorage.setItem(KUNCI_ONGKOS, String(ongkos));
+  }, [ongkos, siap]);
+
+  useEffect(() => {
+    if (!siap) return;
     if (items.length === 0) {
-      setStores([]);
+      setRencana(null);
       return;
     }
     const ctrl = new AbortController();
-    setLoading(true);
-    fetch("/api/compare", {
+    setMemuat(true);
+    setGagal(false);
+    fetch("/api/agen", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         items: items.map((i) => ({ productId: i.productId, qty: i.qty })),
+        biayaPerjalanan: ongkos,
       }),
       signal: ctrl.signal,
     })
-      .then((r) => r.json())
-      .then((d) => setStores(d.stores ?? []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .then((r) => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.json();
+      })
+      .then((d: Rencana) => setRencana(d))
+      .catch((e) => {
+        // Pembatalan karena keranjang berubah bukan kegagalan; menampilkannya
+        // sebagai error justru membuat halaman berkedip merah saat dipakai.
+        if (e?.name !== "AbortError") setGagal(true);
+      })
+      .finally(() => setMemuat(false));
     return () => ctrl.abort();
-    // mode masuk deps: ganti mode → /api/compare dihitung ulang (cookie dibaca server)
-  }, [items, mode]);
+    // `mode` ikut: ganti mode tampilan → rencana dihitung ulang di server.
+  }, [items, ongkos, mode, siap]);
 
-  // Hanya pertimbangkan toko yang punya barang sebagai "pemenang".
-  const ranked = stores.filter((s) => s.availableCount > 0);
-  const best = ranked[0];
-  const worst = ranked.length > 1 ? ranked[ranked.length - 1] : null;
-  const maxTotal = ranked.reduce((m, s) => Math.max(m, s.total), 0) || 1;
-  const maxSaving =
-    best && worst && worst.availableCount === best.availableCount
-      ? worst.total - best.total
-      : 0;
+  const pecah = rencana?.keputusan.jenis === "pecah-dua-toko" ? rencana.pecah : null;
+  const barisRencana = pecah?.baris ?? rencana?.tokoTunggal[0]?.baris ?? [];
 
   return (
     <main>
       <PageHeader
         title="Keranjang"
         emoji="🧺"
-        subtitle={`${count} barang · banding total antar-toko`}
+        subtitle={`${count} barang · rencana belanja dihitung otomatis`}
         action={
           items.length > 0 ? (
             <button
@@ -67,196 +92,166 @@ export default function CartView({ mode }: { mode: DisplayMode }) {
 
       <div className="container-app space-y-4 pt-5">
         {items.length === 0 ? (
-          <div className="card flex flex-col items-center px-6 py-16 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-ink-100 text-3xl dark:bg-ink-800">
-              🧺
-            </div>
-            <p className="mt-4 text-sm font-semibold text-ink-700 dark:text-ink-200">
-              Keranjang masih kosong
-            </p>
-            <p className="mt-1 text-xs text-ink-400">
-              Tambahkan produk untuk membandingkan total belanja antar-toko.
-            </p>
-            <Link href="/" className="btn-primary mt-5 px-5 py-3 text-sm">
-              Mulai cari produk
-            </Link>
-          </div>
+          <KeranjangKosong />
         ) : (
           <>
-            {/* Rekomendasi toko termurah */}
-            {best ? (
-              <section className="card overflow-hidden">
-                <div className="flex items-center gap-3 bg-brand-gradient px-4 py-4 text-white">
-                  <StoreAvatar
-                    name={best.name}
-                    color={best.color}
-                    size="lg"
-                    className="ring-2 ring-white/40"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-medium text-brand-50/90">
-                      🏆 Paling hemat belanja di
-                    </p>
-                    <p className="truncate font-display text-lg font-extrabold">
-                      {best.name}
-                    </p>
-                    <p className="text-[11px] text-brand-50/80">
-                      {best.availableCount} dari {items.length} barang tersedia
-                      {best.realCount > 0 && ` · ${best.realCount} harga nyata`}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-display text-xl font-extrabold tabular-nums">
-                      {formatRupiah(best.total)}
-                    </p>
-                    {maxSaving > 0 && (
-                      <p className="mt-0.5 inline-block rounded-full bg-gold-400 px-2 py-0.5 text-[10px] font-bold text-ink-900">
-                        hemat {formatRupiah(maxSaving)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </section>
-            ) : (
-              !loading && (
-                <div className="card px-5 py-8 text-center text-sm text-ink-500 dark:text-ink-300">
-                  {mode === "real"
-                    ? "Tidak ada harga nyata untuk barang di keranjang. Pilih mode Semua atau tekan Refresh."
-                    : "Belum ada harga untuk barang di keranjang."}
-                </div>
-              )
+            {memuat && !rencana && <RangkaMuat />}
+
+            {gagal && (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300">
+                Gagal menyusun rencana belanja. Coba ubah jumlah barang untuk menghitung ulang.
+              </div>
             )}
 
-            <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
-              {/* Perbandingan semua toko */}
-              <section className="card p-4">
-                <h2 className="mb-3 flex items-center gap-2 font-display text-sm font-bold text-ink-800 dark:text-ink-100">
-                  Total di setiap supermarket
-                  {loading && (
-                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-ink-200 border-t-brand-500" />
-                  )}
-                </h2>
-                <ul className="space-y-3">
-                  {stores.map((s) => {
-                    const isBest = best && s.supermarketId === best.supermarketId;
-                    const pct = Math.round((s.total / maxTotal) * 100);
-                    const none = s.availableCount === 0;
-                    return (
-                      <li key={s.supermarketId}>
-                        <div className="mb-1 flex items-center gap-2.5">
-                          <StoreAvatar
-                            name={s.name}
-                            color={none ? "#94a3b8" : s.color}
-                            size="sm"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-ink-800 dark:text-ink-100">
-                              {s.name}
-                              {isBest && (
-                                <span className="ml-1.5 text-[10px] font-bold text-brand-600">
-                                  TERMURAH
-                                </span>
-                              )}
-                            </p>
-                            {none ? (
-                              <p className="text-[11px] text-ink-400">
-                                Tidak ada barang tersedia
-                              </p>
-                            ) : s.missingCount > 0 ? (
-                              <p className="text-[11px] text-rose-400">
-                                {s.missingCount} barang tak tersedia
-                                {s.realCount > 0 && (
-                                  <span className="text-emerald-500">
-                                    {" "}
-                                    · {s.realCount} nyata
-                                  </span>
-                                )}
-                              </p>
-                            ) : (
-                              s.realCount > 0 && (
-                                <p className="text-[11px] text-emerald-500">
-                                  {s.realCount} harga nyata
-                                </p>
-                              )
-                            )}
-                          </div>
-                          <span
-                            className={`font-display text-sm font-extrabold tabular-nums ${
-                              none
-                                ? "text-ink-300 dark:text-ink-600"
-                                : isBest
-                                ? "text-brand-700 dark:text-brand-400"
-                                : "text-ink-700 dark:text-ink-200"
-                            }`}
-                          >
-                            {none ? "—" : formatRupiah(s.total)}
-                          </span>
-                        </div>
-                        <div className="h-1.5 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-800">
-                          <div
-                            className={`h-full rounded-full transition-all ${
-                              isBest ? "bg-brand-500" : "bg-ink-300 dark:bg-ink-600"
-                            }`}
-                            style={{ width: `${none ? 0 : pct}%` }}
-                          />
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
+            {rencana && (
+              <>
+                <KartuKeputusan
+                  keputusan={rencana.keputusan}
+                  keyakinan={rencana.keyakinan}
+                />
 
-              {/* Daftar barang */}
-              <section className="card p-4">
-                <h2 className="mb-3 font-display text-sm font-bold text-ink-800 dark:text-ink-100">
-                  Barang ({items.length})
-                </h2>
-                <ul className="divide-y divide-ink-100 dark:divide-ink-800">
-                  {items.map((i) => (
-                    <li key={i.productId} className="flex items-center gap-3 py-2.5">
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ink-100 text-2xl dark:bg-ink-800">
-                        {i.emoji}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-ink-800 dark:text-ink-100">
+                <DaftarPeringatan peringatan={rencana.peringatan} />
+
+                {pecah && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <RincianPecah
+                      label="Belanja utama"
+                      nama={pecah.utama.nama}
+                      jumlah={pecah.utama.jumlah}
+                      total={pecah.utama.total}
+                    />
+                    <RincianPecah
+                      label="Mampir sebentar"
+                      nama={pecah.kedua.nama}
+                      jumlah={pecah.kedua.jumlah}
+                      total={pecah.kedua.total}
+                    />
+                  </div>
+                )}
+
+                <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+                  <div className="space-y-4">
+                    <DaftarBelanja
+                      baris={barisRencana}
+                      judul={pecah ? "Daftar belanja per toko" : "Daftar belanja"}
+                      kelompokkanPerToko={!!pecah}
+                    />
+                    <SaranPengganti saran={rencana.substitusi} />
+                  </div>
+
+                  <div className="space-y-4">
+                    <PeringkatToko toko={rencana.tokoTunggal} />
+                    <AturOngkos nilai={ongkos} onGanti={setOngkos} />
+                  </div>
+                </div>
+              </>
+            )}
+
+            <section className="card p-4">
+              <h2 className="mb-3 font-display text-sm font-bold text-ink-800 dark:text-ink-100">
+                Ubah keranjang ({items.length})
+              </h2>
+              <ul className="divide-y divide-ink-100 dark:divide-ink-800">
+                {items.map((i) => (
+                  <li key={i.productId} className="flex items-center gap-3 py-2.5">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ink-100 text-2xl dark:bg-ink-800">
+                      {i.emoji}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-ink-800 dark:text-ink-100">
+                        <Link href={`/produk/${i.slug}`} className="hover:underline">
                           {i.name}
-                        </p>
-                        <p className="text-[11px] text-ink-400">{i.unit}</p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => setQty(i.productId, i.qty - 1)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink-100 text-ink-600 transition active:scale-90 dark:bg-ink-800 dark:text-ink-300"
-                          aria-label="Kurangi"
-                        >
-                          −
-                        </button>
-                        <span className="w-7 text-center text-sm font-bold tabular-nums">
-                          {i.qty}
-                        </span>
-                        <button
-                          onClick={() => setQty(i.productId, i.qty + 1)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink-100 text-ink-600 transition active:scale-90 dark:bg-ink-800 dark:text-ink-300"
-                          aria-label="Tambah"
-                        >
-                          ＋
-                        </button>
-                        <button
-                          onClick={() => remove(i.productId)}
-                          className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg text-ink-300 transition hover:text-rose-500"
-                          aria-label="Hapus"
-                        >
-                          🗑
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            </div>
+                        </Link>
+                      </p>
+                      <p className="text-[11px] text-ink-400">{i.unit}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setQty(i.productId, i.qty - 1)}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink-100 text-ink-600 transition active:scale-90 dark:bg-ink-800 dark:text-ink-300"
+                        aria-label={`Kurangi ${i.name}`}
+                      >
+                        −
+                      </button>
+                      <span className="w-7 text-center text-sm font-bold tabular-nums">
+                        {i.qty}
+                      </span>
+                      <button
+                        onClick={() => setQty(i.productId, i.qty + 1)}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink-100 text-ink-600 transition active:scale-90 dark:bg-ink-800 dark:text-ink-300"
+                        aria-label={`Tambah ${i.name}`}
+                      >
+                        ＋
+                      </button>
+                      <button
+                        onClick={() => remove(i.productId)}
+                        className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg text-ink-300 transition hover:text-rose-500"
+                        aria-label={`Hapus ${i.name}`}
+                      >
+                        🗑
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
           </>
         )}
       </div>
     </main>
+  );
+}
+
+function RincianPecah({
+  label,
+  nama,
+  jumlah,
+  total,
+}: {
+  label: string;
+  nama: string;
+  jumlah: number;
+  total: number;
+}) {
+  return (
+    <div className="card p-4">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-400">
+        {label}
+      </p>
+      <p className="mt-0.5 truncate font-display text-lg font-extrabold text-ink-800 dark:text-ink-100">
+        {nama}
+      </p>
+      <p className="text-[11px] text-ink-400">
+        {jumlah} barang · {formatRupiah(total)}
+      </p>
+    </div>
+  );
+}
+
+function KeranjangKosong() {
+  return (
+    <div className="card flex flex-col items-center px-6 py-16 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-ink-100 text-3xl dark:bg-ink-800">
+        🧺
+      </div>
+      <p className="mt-4 text-sm font-semibold text-ink-700 dark:text-ink-200">
+        Keranjang masih kosong
+      </p>
+      <p className="mt-1 text-xs text-ink-400">
+        Tambahkan produk, nanti saya susunkan mau belanja ke mana dan kenapa.
+      </p>
+      <Link href="/" className="btn-primary mt-5 px-5 py-3 text-sm">
+        Mulai cari produk
+      </Link>
+    </div>
+  );
+}
+
+function RangkaMuat() {
+  return (
+    <div className="space-y-3" aria-label="Menyusun rencana" role="status">
+      <div className="skeleton h-36 w-full" />
+      <div className="skeleton h-24 w-full" />
+    </div>
   );
 }

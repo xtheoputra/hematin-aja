@@ -5,6 +5,7 @@ import AddToCartButton from "./AddToCartButton";
 import ProductThumb from "./ProductThumb";
 import PriceSourceBadge from "./PriceSourceBadge";
 import DataAgeBadge from "./DataAgeBadge";
+import HargaSatuanBadge from "./HargaSatuanBadge";
 
 export default function ProductCard({ p }: { p: ProductListItem }) {
   const hasSpread = p.available && p.spread > 0;
@@ -50,6 +51,13 @@ export default function ProductCard({ p }: { p: ProductListItem }) {
               )}
               <PriceSourceBadge source={p.cheapestSource} className="ml-0.5" />
             </div>
+
+            <HargaSatuanBadge
+              harga={p.minPrice}
+              satuan={p.unit}
+              gaya="tegas"
+              className="mt-1.5"
+            />
 
             <div className="mt-1.5 flex items-center gap-1.5">
               <span

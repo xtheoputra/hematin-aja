@@ -1,11 +1,6 @@
 import { prisma } from "@/lib/db";
 import { denganCache, kunciData, TTL } from "@/lib/cache";
-import type {
-  CartCompareStore,
-  CartCompareLine,
-  CompareMatrix,
-  StorePrice,
-} from "@/lib/types";
+import type { CompareMatrix } from "@/lib/types";
 import {
   REAL_SOURCES,
   alignedCells,
@@ -88,71 +83,5 @@ export async function getCompareMatrix(opts: {
         latestRecordedAt,
       };
     }
-  );
-}
-
-// Bandingkan total belanja keranjang di tiap supermarket → cari yang termurah.
-export async function compareCart(
-  items: { productId: string; qty: number }[],
-  realOnly = false
-): Promise<CartCompareStore[]> {
-  if (items.length === 0) return [];
-  const ids = items.map((i) => i.productId);
-  const qtyById = new Map(items.map((i) => [i.productId, i.qty]));
-
-  const stempel = await stempelTerbaru();
-  const [supermarkets, products] = await Promise.all([
-    prisma.supermarket.findMany({ select: SM_SELECT }),
-    prisma.product.findMany({
-      where: { id: { in: ids } },
-      include: { prices: sertakanHarga(stempel) },
-    }),
-  ]);
-
-  // productId -> supermarketId -> StorePrice
-  const priceMap = new Map<string, Map<string, StorePrice>>();
-  for (const p of products) {
-    priceMap.set(p.id, pickPerStore(p.prices as PriceWithStore[], realOnly));
-  }
-
-  const result: CartCompareStore[] = supermarkets.map((sm) => {
-    const lines: CartCompareLine[] = products.map((p) => {
-      const qty = qtyById.get(p.id) ?? 1;
-      const sp = priceMap.get(p.id)?.get(sm.id);
-      const available = !!sp && sp.inStock;
-      return {
-        productId: p.id,
-        name: p.name,
-        emoji: p.emoji,
-        unit: p.unit,
-        qty,
-        price: available ? (sp as StorePrice).price : null,
-        available,
-        isReal: !!sp && sp.isReal,
-        sourceKind: sp ? sp.sourceKind : "none",
-      };
-    });
-    const total = lines.reduce(
-      (sum, l) => sum + (l.available ? (l.price as number) * l.qty : 0),
-      0
-    );
-    const availableCount = lines.filter((l) => l.available).length;
-    const realCount = lines.filter((l) => l.available && l.isReal).length;
-    return {
-      supermarketId: sm.id,
-      slug: sm.slug,
-      name: sm.name,
-      color: sm.color,
-      total,
-      availableCount,
-      missingCount: lines.length - availableCount,
-      realCount,
-      lines,
-    };
-  });
-
-  // Urutkan: kelengkapan barang dulu, lalu total termurah.
-  return result.sort(
-    (a, b) => b.availableCount - a.availableCount || a.total - b.total
   );
 }

@@ -8,8 +8,9 @@
  *   cari.ts     — alur pencarian bertingkat                     (Prisma)
  *   produk.ts   — daftar & detail produk                        (Prisma)
  *   toko.ts     — profil supermarket                            (Prisma)
- *   banding.ts  — matriks banding & keranjang                   (Prisma)
+ *   banding.ts  — matriks banding produk × toko                 (Prisma)
  *   insight.ts  — ringkasan hemat                               (Prisma)
+ *   agen.ts     — pengumpul data untuk mesin keputusan belanja  (Prisma)
  *
  * Jalur impor `@/lib/queries` sengaja dipertahankan supaya seluruh halaman
  * tidak perlu diubah hanya karena berkasnya dipecah.
@@ -52,6 +53,7 @@ export {
 } from "./cari";
 
 export { getSupermarkets, getSupermarketDetail } from "./toko";
-export { getCompareMatrix, compareCart } from "./banding";
+export { getCompareMatrix } from "./banding";
+export { rencanaBelanja, type PermintaanRencana } from "./agen";
 export { getInsights } from "./insight";
 export { stempelTerbaru, stempelTeratas } from "./muat";

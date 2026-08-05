@@ -3,6 +3,7 @@ import { formatNumber, formatAge } from "@/lib/format";
 import { freshnessOf } from "@/lib/freshness";
 import { sourceMeta } from "@/lib/source";
 import ProductThumb from "./ProductThumb";
+import HargaSatuanBadge from "./HargaSatuanBadge";
 import type { CompareMatrix, StoreCell } from "@/lib/types";
 
 /**
@@ -68,6 +69,14 @@ export default function CompareTable({ matrix }: { matrix: CompareMatrix }) {
                       <span className="block text-[10px] text-ink-400">
                         {row.unit}
                       </span>
+                      {/* Harga per satuan dari harga termurah baris ini. Tanpa
+                          angka ini, kolom-kolom di kanan hanya bisa
+                          dibandingkan sesama produk berukuran sama. */}
+                      <HargaSatuanBadge
+                        harga={row.min}
+                        satuan={row.unit}
+                        className="block"
+                      />
                     </span>
                   </Link>
                 </th>

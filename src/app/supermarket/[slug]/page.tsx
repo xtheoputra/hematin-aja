@@ -6,6 +6,7 @@ import { formatRupiah } from "@/lib/format";
 import StoreAvatar from "@/components/StoreAvatar";
 import ProductThumb from "@/components/ProductThumb";
 import PriceSourceBadge from "@/components/PriceSourceBadge";
+import HargaSatuanBadge from "@/components/HargaSatuanBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -146,16 +147,25 @@ export default async function SupermarketDetailPage({
                       </p>
                     )}
                   </div>
-                  <span
-                    className={`font-display text-base font-extrabold tabular-nums ${
-                      !p.inStock
-                        ? "text-ink-300 line-through dark:text-ink-600"
-                        : p.isCheapest
-                        ? "text-brand-700 dark:text-brand-400"
-                        : "text-ink-800 dark:text-ink-200"
-                    }`}
-                  >
-                    {formatRupiah(p.price)}
+                  <span className="shrink-0 text-right">
+                    <span
+                      className={`block font-display text-base font-extrabold tabular-nums ${
+                        !p.inStock
+                          ? "text-ink-300 line-through dark:text-ink-600"
+                          : p.isCheapest
+                          ? "text-brand-700 dark:text-brand-400"
+                          : "text-ink-800 dark:text-ink-200"
+                      }`}
+                    >
+                      {formatRupiah(p.price)}
+                    </span>
+                    {p.inStock && (
+                      <HargaSatuanBadge
+                        harga={p.price}
+                        satuan={p.unit}
+                        className="mt-0.5 block"
+                      />
+                    )}
                   </span>
                 </Link>
               ))}

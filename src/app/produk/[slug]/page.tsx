@@ -10,6 +10,8 @@ import ProductThumb from "@/components/ProductThumb";
 import ThemeToggle from "@/components/ThemeToggle";
 import PriceSourceBadge from "@/components/PriceSourceBadge";
 import DataAgeBadge from "@/components/DataAgeBadge";
+import HargaSatuanBadge from "@/components/HargaSatuanBadge";
+import { hargaPerSatuan } from "@/lib/satuan";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +37,9 @@ export default async function ProductPage({
 
   const change = p.stats?.changePct ?? null;
   const spread = p.stats ? p.stats.max - p.stats.min : 0;
+  // Harga per satuan dari harga TERMURAH — angka pembanding yang sebenarnya
+  // saat produk ini diadu dengan kemasan berukuran lain.
+  const perSatuanTermurah = hargaPerSatuan(p.stats?.min ?? null, p.unit);
 
   return (
     <main>
@@ -98,10 +103,17 @@ export default async function ProductPage({
               <p className="text-xs font-medium text-brand-50/90">
                 Harga termurah saat ini
               </p>
-              <div className="mt-1 flex items-end justify-between">
-                <p className="font-display text-3xl font-extrabold tabular-nums">
-                  {formatRupiah(p.stats.min)}
-                </p>
+              <div className="mt-1 flex items-end justify-between gap-3">
+                <div>
+                  <p className="font-display text-3xl font-extrabold tabular-nums">
+                    {formatRupiah(p.stats.min)}
+                  </p>
+                  {perSatuanTermurah && (
+                    <p className="mt-0.5 text-xs font-semibold tabular-nums text-brand-50/90">
+                      {formatRupiah(perSatuanTermurah.nilai)}/{perSatuanTermurah.satuan}
+                    </p>
+                  )}
+                </div>
                 <p className="text-right text-xs text-brand-50/90">
                   di <b className="font-semibold text-white">{p.stats.cheapestStore}</b>
                 </p>
@@ -223,18 +235,27 @@ export default async function ProductPage({
                         </p>
                       )}
                     </div>
-                    <span
-                      className={`shrink-0 font-display text-base font-extrabold tabular-nums ${
-                        !s.available
-                          ? "text-xs font-semibold text-ink-300 dark:text-ink-600"
-                          : !s.inStock
-                          ? "text-ink-300 line-through dark:text-ink-600"
-                          : isBest
-                          ? "text-brand-700 dark:text-brand-400"
-                          : "text-ink-800 dark:text-ink-200"
-                      }`}
-                    >
-                      {s.available ? formatRupiah(s.price as number) : "Tidak tersedia"}
+                    <span className="shrink-0 text-right">
+                      <span
+                        className={`block font-display text-base font-extrabold tabular-nums ${
+                          !s.available
+                            ? "text-xs font-semibold text-ink-300 dark:text-ink-600"
+                            : !s.inStock
+                            ? "text-ink-300 line-through dark:text-ink-600"
+                            : isBest
+                            ? "text-brand-700 dark:text-brand-400"
+                            : "text-ink-800 dark:text-ink-200"
+                        }`}
+                      >
+                        {s.available ? formatRupiah(s.price as number) : "Tidak tersedia"}
+                      </span>
+                      {s.available && s.inStock && (
+                        <HargaSatuanBadge
+                          harga={s.price}
+                          satuan={p.unit}
+                          className="mt-0.5 block"
+                        />
+                      )}
                     </span>
                   </li>
                 );

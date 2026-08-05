@@ -91,6 +91,9 @@ export default async function InsightPage() {
                     <p className="inline-block rounded-full bg-rose-50 px-1.5 text-[10px] font-bold text-rose-500">
                       {formatPercent(d.changePct)}
                     </p>
+                    {!d.isReal && (
+                      <p className="mt-0.5 text-[10px] text-ink-400">dari perkiraan</p>
+                    )}
                   </div>
                 </Link>
               ))}
@@ -122,15 +125,26 @@ export default async function InsightPage() {
                         {r.pickName}
                       </p>
                       <p className="text-[11px] text-ink-400">
-                        Termurah di {r.categoryName} · {r.pickStore}
+                        {r.pickUnit} · {r.pickStore}
                       </p>
                     </div>
-                    <p className="font-display text-sm font-extrabold tabular-nums text-brand-700">
-                      {formatRupiah(r.pickPrice)}
-                    </p>
+                    <div className="shrink-0 text-right">
+                      <p className="font-display text-sm font-extrabold tabular-nums text-brand-700">
+                        {formatRupiah(r.perSatuan)}
+                        <span className="text-[11px] font-semibold text-ink-400">
+                          /{r.satuanTampil}
+                        </span>
+                      </p>
+                      <p className="text-[10px] tabular-nums text-ink-400">
+                        label {formatRupiah(r.pickPrice)}
+                      </p>
+                    </div>
                   </div>
-                  <p className="mt-2 flex items-center gap-1 rounded-xl bg-gold-50 px-2.5 py-1.5 text-[11px] font-semibold text-gold-700 dark:bg-gold-500/10 dark:text-gold-400">
-                    💰 Lebih hemat ~{formatRupiah(r.saving)} vs {r.comparedTo}
+                  <p className="mt-2 rounded-xl bg-gold-50 px-2.5 py-1.5 text-[11px] font-semibold leading-relaxed text-gold-700 dark:bg-gold-500/10 dark:text-gold-400">
+                    💰 {r.hematPersen.toFixed(0)}% lebih murah per {r.satuanTampil} —
+                    hemat {formatRupiah(r.hematPerSatuan)}/{r.satuanTampil} dibanding
+                    median {formatRupiah(r.medianPerSatuan)} dari{" "}
+                    {r.jumlahPembanding} produk sebanding di {r.categoryName}.
                   </p>
                 </Link>
               ))}

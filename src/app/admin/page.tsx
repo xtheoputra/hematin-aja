@@ -3,8 +3,9 @@ import { prisma } from "@/lib/db";
 import { adminDiaktifkan } from "@/lib/admin";
 import { sesiAdminSah } from "@/lib/adminSesi";
 import { getCategories, kueriGagalTeratas, ringkasanKerja } from "@/lib/queries";
+import { auditMutu } from "@/lib/queries/mutu";
 import { bacaLog } from "@/lib/log";
-import { formatAge } from "@/lib/format";
+import { formatAge, formatRupiah } from "@/lib/format";
 import PageHeader from "@/components/PageHeader";
 import MasukAdmin from "@/components/admin/MasukAdmin";
 import KeluarAdmin from "@/components/admin/KeluarAdmin";
@@ -28,7 +29,7 @@ export default async function AdminPage() {
     );
   }
 
-  const [produk, toko, kategori, kerja, gagal, log] = await Promise.all([
+  const [produk, toko, kategori, kerja, gagal, log, mutu] = await Promise.all([
     prisma.product.findMany({
       select: { slug: true, name: true, unit: true },
       orderBy: { name: "asc" },
@@ -41,6 +42,7 @@ export default async function AdminPage() {
     ringkasanKerja(60),
     kueriGagalTeratas(10),
     bacaLog({ limit: 12 }),
+    auditMutu(20),
   ]);
 
   const persen = kerja.totalProduk
@@ -141,6 +143,87 @@ export default async function AdminPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </section>
+
+        {/* Mutu data — cacat yang tidak akan pernah ketahuan dari kode */}
+        <section className="card p-4 md:p-5">
+          <h2 className="font-display text-base font-bold text-ink-800 dark:text-ink-100">
+            🩺 Mutu data
+          </h2>
+          <p className="mt-0.5 text-xs text-ink-400">
+            Cacat isi katalog, bukan cacat kode — karena itu tidak akan pernah
+            tertangkap <code>npm test</code>. Agen belanja sudah menolak memakai
+            angka-angka ini, tapi halaman katalog masih memajangnya sampai
+            datanya diperbaiki di sini.
+          </p>
+
+          <div className="mt-3 grid gap-4 md:grid-cols-2">
+            <div>
+              <p className="text-xs font-bold text-ink-700 dark:text-ink-200">
+                Harga tidak masuk akal ({mutu.totalHargaRusak})
+              </p>
+              {mutu.hargaRusak.length === 0 ? (
+                <p className="mt-1.5 text-sm text-ink-400">
+                  Bersih — semua harga terbaru lolos pemeriksaan.
+                </p>
+              ) : (
+                <ul className="mt-1.5 space-y-1.5">
+                  {mutu.hargaRusak.map((h) => (
+                    <li
+                      key={h.priceId}
+                      className="rounded-xl border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[11px] leading-relaxed dark:border-rose-900/60 dark:bg-rose-950/30"
+                    >
+                      <Link
+                        href={`/produk/${h.produkSlug}`}
+                        className="font-semibold text-rose-700 hover:underline dark:text-rose-300"
+                      >
+                        {h.produkNama}
+                      </Link>{" "}
+                      <span className="text-ink-500 dark:text-ink-400">
+                        di {h.toko} — {formatRupiah(h.harga)}
+                        {h.nyata && " (ditandai NYATA)"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div>
+              <p className="text-xs font-bold text-ink-700 dark:text-ink-200">
+                Satuan tak terbaca ({mutu.totalProduk - mutu.satuanTerbaca} dari{" "}
+                {mutu.totalProduk})
+              </p>
+              <p className="mt-0.5 text-[11px] text-ink-400">
+                Selama satuannya begini, produk ini tidak punya harga per kg/L —
+                jadi tidak bisa ikut dibandingkan lintas ukuran.
+              </p>
+              {mutu.satuanRusak.length === 0 ? (
+                <p className="mt-1.5 text-sm text-ink-400">
+                  Bersih — semua satuan terbaca.
+                </p>
+              ) : (
+                <ul className="mt-1.5 space-y-1.5">
+                  {mutu.satuanRusak.map((s) => (
+                    <li
+                      key={s.slug}
+                      className="rounded-xl border border-gold-200 bg-gold-50 px-2.5 py-1.5 text-[11px] leading-relaxed dark:border-gold-900/60 dark:bg-gold-950/30"
+                    >
+                      <Link
+                        href={`/produk/${s.slug}`}
+                        className="font-semibold text-gold-800 hover:underline dark:text-gold-300"
+                      >
+                        {s.nama}
+                      </Link>{" "}
+                      <span className="text-ink-500 dark:text-ink-400">
+                        satuannya “{s.satuan}”
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </section>
 
