@@ -11,7 +11,9 @@ import ThemeToggle from "@/components/ThemeToggle";
 import PriceSourceBadge from "@/components/PriceSourceBadge";
 import DataAgeBadge from "@/components/DataAgeBadge";
 import HargaSatuanBadge from "@/components/HargaSatuanBadge";
+import BandingVarian from "@/components/BandingVarian";
 import { hargaPerSatuan } from "@/lib/satuan";
+import { varianProduk } from "@/lib/queries/varian";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +25,10 @@ export default async function ProductPage({
   params: { slug: string };
 }) {
   const mode = getDisplayMode();
-  const p = await getProductDetail(params.slug, isRealOnly(mode));
+  const [p, varian] = await Promise.all([
+    getProductDetail(params.slug, isRealOnly(mode)),
+    varianProduk(params.slug, isRealOnly(mode)),
+  ]);
   if (!p) notFound();
 
   const inStockCells = p.stores.filter((c) => c.available && c.inStock);
@@ -153,6 +158,9 @@ export default async function ProductPage({
             {formatPercent(change)} sejak awal periode
           </div>
         )}
+
+        {/* Varian ukuran — menjawab "kemasan mana yang paling hemat" */}
+        <BandingVarian v={varian} />
 
         <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
           {/* Grafik tren */}

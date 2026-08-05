@@ -260,6 +260,69 @@ berguna dibanding daftar "paling dicari".
 
 ---
 
+## Sesi 7c — 5 Agustus 2026 · "Kemasan mana yang hemat, dan seberapa boleh dipercaya"
+
+**`npm test` 369 → 398.**
+
+### 1. Perbandingan varian ukuran di halaman produk
+
+Halaman produk selama ini cuma menjawab setengah pertanyaan: *"di toko mana
+barang INI paling murah"*. Setengah lainnya — apakah barang ini sendiri
+pilihan yang masuk akal dibanding kemasan lain — tak pernah ditanyakan,
+padahal selisihnya biasanya **jauh lebih besar** daripada selisih antar-toko.
+
+`src/lib/varian.ts` (murni) menyusun tabel varian sejenis, diurut Rp per
+satuan, dengan gerbang yang sama seperti agen: harus **sejenis** (kataJenis,
+bukan sekadar sekategori) dan **sebasis satuan**.
+
+### 🔬 Cacat ketiga yang lolos uji dan hanya ketahuan setelah dibuka
+
+Judulnya sempat berbunyi **"ada kemasan 92% lebih murah"** — dengan
+membandingkan botol 700 ml terhadap **galon 19 L**. Benar secara Rp/L, tapi
+galon menuntut dispenser dan bukan pilihan kemasan bagi orang yang sedang
+memilih botol.
+
+Yang menarik: rem untuk kasus ini **sudah ada** di `agen/substitusi.ts`
+(`BATAS_LIPAT_UKURAN`), dan saya sengaja tidak memasangnya di sini dengan
+alasan "ini menyajikan perbandingan, bukan menyarankan tindakan". Alasannya
+setengah benar — dan setengah yang salah persis ada di judulnya.
+
+Pemecahannya membedakan dua hal yang tadinya tercampur:
+
+- **Tabelnya tetap memuat semua ukuran**, termasuk galon. Itu informasi sah,
+  persis seperti label harga per satuan di rak supermarket.
+- **Klaim hematnya hanya dari kemasan sekelas**, dan yang di luar kelas diberi
+  tanda `BEDA KELAS`.
+
+*Menampilkan angka* adalah satu hal; *menyuruh orang pindah ke sana* hal lain,
+dan cuma yang kedua perlu menahan diri. `BATAS_LIPAT_UKURAN` sekarang tinggal
+di `lib/satuan.ts` dan dipakai bersama, supaya kedua tempat tak pernah memakai
+batas berbeda.
+
+Hasilnya sekarang: *"Air Mineral Aqua 47% lebih murah per L"* (600 ml vs
+700 ml) — perbandingan yang benar-benar bisa ditindaklanjuti.
+
+### 2. Halaman publik `/data` — Kondisi Data
+
+Seluruh aplikasi ini berdiri di atas satu klaim: harga perkiraan tidak pernah
+disamarkan sebagai harga nyata. Klaim itu selama ini cuma diucapkan lewat
+label kecil di kartu harga, dan **tak ada satu pun tempat yang bisa ditanyai
+"sebenarnya seberapa jauh aplikasi ini boleh dipercaya?"**.
+
+Sengaja **publik**, bukan disembunyikan di `/admin`: angka cakupan yang cuma
+dilihat pemiliknya adalah angka yang lambat laun dibiarkan buruk.
+
+Isinya: nyata vs perkiraan (5 dari 16.385), cakupan per kategori & per toko,
+sebaran kesegaran, dan berapa satuan yang terbaca. Angkanya saling
+tercocokkan — 9.180 + 7.200 + 4 + 1 = 16.385.
+
+Satu perbaikan penyajian setelah dilihat: "95 kedaluwarsa" tepat di atas
+"catatan harga terbaru: kemarin" terbaca bertentangan padahal keduanya benar.
+Sekarang dijelaskan bahwa yang dihitung adalah umur **harga yang benar-benar
+ditampilkan** per produk — satu catatan baru tidak menyegarkan 96 produk.
+
+---
+
 ## Sesi 6 — 4 Agustus 2026 · "Semua PR Dikerjakan"
 
 **Status akhir:** `tsc` nol error, `npm run build` hijau, **`npm test` 166/166**,

@@ -36,6 +36,8 @@ lengkap dengan **insight** & rekomendasi hemat.
 - 📈 **Grafik tren harga** dari waktu ke waktu per toko
 - 🧺 **Keranjang pintar**: hitung total belanja di tiap toko → toko paling hemat
 - 💡 **Insight**: toko paling sering termurah, harga lagi turun, rekomendasi hemat
+- 📦 **Banding kemasan**: kemasan mana yang paling hemat per kg/L, bukan per harga label
+- 🔍 **Kondisi Data** (`/data`): berapa harga yang benar-benar dicek vs perkiraan
 - 📱 **PWA**: bisa di-install di HP & punya cache offline
 - 🔐 **Halaman admin** (`/admin`): input harga nyata manual, produk baru, alias,
   daftar kerja pengisian data, kueri yang gagal, dan catatan kejadian
@@ -86,7 +88,7 @@ npm run dev          # jalankan di http://localhost:3000
 Skrip lain:
 
 ```bash
-npm test             # 369 pemeriksaan, ±1 detik — pakai ini, jangan verifikasi manual
+npm test             # 398 pemeriksaan, ±1 detik — pakai ini, jangan verifikasi manual
 npm run db:seed      # isi ulang data contoh
 npm run db:reset     # reset DB + seed ulang
 npm run db:studio    # buka Prisma Studio (lihat/ubah data)
@@ -166,6 +168,7 @@ src/
     produk/[slug]/     # detail produk: harga per toko + grafik tren
     keranjang/         # banding total belanja → toko termurah
     insight/           # insight & rekomendasi hemat
+    data/              # kondisi data: nyata vs perkiraan, cakupan, kesegaran
     admin/             # 🔐 input harga nyata, produk, alias + daftar kerja
     api/               # /products, /insights, /agen, /klik, /admin/*
   components/          # UI: kartu produk, grafik, navigasi, keranjang
@@ -177,7 +180,8 @@ src/
     log.ts             # catatan kejadian tersimpan + percobaan ulang
     admin.ts           # sandi & pembatas laju (MURNI, tanpa next/headers)
     impor.ts           # gerbang mutu produk dari sumber luar (MURNI)
-    satuan.ts          # harga per satuan (MURNI) — dasar semua perbandingan lintas ukuran
+    satuan.ts          # harga per satuan (MURNI)
+    varian.ts          # banding kemasan sejenis per satuan (MURNI) — dasar semua perbandingan lintas ukuran
     agen/              # mesin keputusan belanja (MURNI, tanpa DB/LLM/jaringan)
       rencana.ts       #   total setara antar-toko, pecah 2 toko, keyakinan
       peringatan.ts    #   peringatan mutu data
@@ -190,6 +194,8 @@ src/
       agen.ts          #   pengumpul data untuk mesin keputusan
       mutu.ts          #   audit mutu data katalog
       analitik.ts      #   ringkasan pencarian & klik (bagian ringkas MURNI)
+      kondisi.ts       #   bahan halaman publik /data
+      varian.ts        #   pengumpul data banding kemasan
       produk.ts toko.ts banding.ts insight.ts
   scrapers/            # framework scraper + adapter per toko
 uji/                   # `npm test` — kerangka sendiri, tanpa dependensi baru

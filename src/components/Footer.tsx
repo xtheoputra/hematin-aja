@@ -21,6 +21,7 @@ export default function Footer() {
               <FooterLink href="/supermarket">Supermarket</FooterLink>
               <FooterLink href="/insight">Insight</FooterLink>
               <FooterLink href="/keranjang">Keranjang</FooterLink>
+              <FooterLink href="/data">Kondisi Data</FooterLink>
             </FooterCol>
             <FooterCol title="Kategori">
               <FooterLink href="/?kategori=sembako">Sembako</FooterLink>

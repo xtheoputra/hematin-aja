@@ -27,12 +27,13 @@
  * hanyalah menutup kesalahan yang paling kasar; sisanya menunggu taksonomi
  * jenis produk yang memang belum ada di katalog.
  */
-import { adalahUkuran, tokenize } from "@/lib/normalize";
-import { hargaPerSatuan, type Ukuran } from "@/lib/satuan";
+import { kataJenis } from "@/lib/normalize";
+import { BATAS_LIPAT_UKURAN, hargaPerSatuan, type Ukuran } from "@/lib/satuan";
 import type { BarisMasuk, KandidatSubstitusi, Substitusi } from "./tipe";
 
-/** Ukuran pengganti paling banyak sekian kali lipat dari yang diganti. */
-export const BATAS_LIPAT_UKURAN = 5;
+// Batas beda ukuran dipakai bersama dengan tabel varian di halaman produk —
+// lihat `BATAS_LIPAT_UKURAN` di `@/lib/satuan`.
+export { BATAS_LIPAT_UKURAN } from "@/lib/satuan";
 /**
  * Hemat per satuan minimal, dalam persen. Bekerja BERPASANGAN dengan
  * `MIN_HEMAT_RUPIAH`: persen menyaring beda yang tak berarti pada barang mahal,
@@ -46,16 +47,6 @@ export const MAKS_SARAN = 5;
 
 /** Berapa satuan dasar dalam satu satuan tampil (1 kg = 1000 g). */
 const pengaliTampil = (basis: Ukuran["basis"]) => (basis === "pcs" ? 1 : 1000);
-
-/**
- * Kata yang menyatakan JENIS barang: token nama produk tanpa ukuran dan tanpa
- * angka. "Air Mineral Aqua 600 ml" → {air, mineral, aqua}.
- */
-export function kataJenis(nama: string): Set<string> {
-  return new Set(
-    tokenize(nama).filter((t) => !adalahUkuran(t) && !/^\d/.test(t))
-  );
-}
 
 export function cariSubstitusi(
   keranjang: BarisMasuk[],

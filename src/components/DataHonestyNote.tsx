@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { DisplayMode } from "@/lib/mode";
 import { formatAge, formatDateShort } from "@/lib/format";
 import { freshnessOf, freshnessMeta } from "@/lib/freshness";
@@ -49,7 +50,10 @@ export default function DataHonestyNote({
             estimasi digrounding riset (bukan harga live). Pilih{" "}
             <b>Hanya Nyata</b> untuk menyembunyikan perkiraan, atau tekan{" "}
             <b>Refresh</b> untuk menarik data nyata terbaru. Tetap cek harga
-            resmi di toko sebelum belanja.
+            resmi di toko sebelum belanja.{" "}
+            <Link href="/data" className="font-bold underline underline-offset-2">
+              Lihat kondisi data selengkapnya →
+            </Link>
           </span>
         </div>
       )}

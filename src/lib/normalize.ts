@@ -213,6 +213,29 @@ export function tokenCocokProduk(p: ProdukUntukCocok): string[] {
   ];
 }
 
+/**
+ * Kata yang menyatakan JENIS barang: token nama produk tanpa ukuran dan tanpa
+ * angka. "Air Mineral Aqua 600 ml" → {air, mineral, aqua}.
+ *
+ * Dipakai untuk menjawab "apakah dua produk ini barang sejenis?" — pertanyaan
+ * yang TIDAK bisa dijawab oleh kategori. Di kategori "minuman" berkumpul Adem
+ * Sari, oatmeal instan, kopi sachet, dan air mineral; agen pernah dengan yakin
+ * menyuruh mengganti yang satu dengan yang lain karena mengira sekategori
+ * berarti sejenis.
+ *
+ * Batas yang diakui: berbagi kata bukan pemahaman. "Minyak goreng" dan "minyak
+ * kayu putih" akan lolos sebagai sejenis bila kebetulan sekategori.
+ */
+export function kataJenis(nama: string): Set<string> {
+  return new Set(tokenize(nama).filter((t) => !adalahUkuran(t) && !/^\d/.test(t)));
+}
+
+/** Berapa kata jenis yang dibagi dua nama produk. */
+export function jenisBersama(a: string, b: string): string[] {
+  const ka = kataJenis(a);
+  return [...kataJenis(b)].filter((t) => ka.has(t));
+}
+
 /** Jarak sunting dengan ambang: berhenti begitu melewati `batas`. */
 export function jarakSunting(a: string, b: string, batas = 1): number {
   if (a === b) return 0;

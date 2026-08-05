@@ -206,6 +206,24 @@ export function hargaPerSatuan(
   return { nilai, basis: u.basis, satuan: SATUAN_TAMPIL[u.basis], ukuran: u };
 }
 
+/**
+ * Sejauh mana beda ukuran masih boleh disebut "kemasan lain dari barang yang
+ * sama". Di luar ini, perbandingan per satuan tetap benar secara aritmetika
+ * tapi berhenti bermakna: air 600 ml vs galon 19 L bukan pilihan kemasan —
+ * galon menuntut dispenser dan tidak bisa dibawa dari rak ke kasir.
+ *
+ * Ditaruh di sini, bukan di masing-masing pemakainya, supaya saran pengganti
+ * agen dan tabel varian di halaman produk tidak pernah memakai batas berbeda.
+ */
+export const BATAS_LIPAT_UKURAN = 5;
+
+/** Apakah dua ukuran masih satu kelas kemasan? */
+export function ukuranSekelas(a: Ukuran, b: Ukuran): boolean {
+  if (a.basis !== b.basis || a.jumlah <= 0 || b.jumlah <= 0) return false;
+  const lipat = b.jumlah / a.jumlah;
+  return lipat <= BATAS_LIPAT_UKURAN && lipat >= 1 / BATAS_LIPAT_UKURAN;
+}
+
 /** Dua ukuran hanya boleh diadu kalau basisnya sama. Rp/kg bukan Rp/L. */
 export function sebanding(
   a: Ukuran | HargaSatuan | null,
